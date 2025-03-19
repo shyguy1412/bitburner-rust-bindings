@@ -2,9 +2,11 @@ use wasm_bindgen::JsValue;
 use wasm_bindgen::describe::EXTERNREF;
 use wasm_bindgen::describe::WasmDescribe;
 use wasm_bindgen::describe::inform;
+
 mod types;
-pub use bitburner_bindings_macros::bb_bindgen;
 pub use types::*;
+
+pub use bitburner_bindings_macros::bb_bindgen;
 
 pub struct NS {
     _ns: Object,
@@ -18,7 +20,7 @@ impl WasmDescribe for NS {
 }
 
 impl NS {
-    pub fn tprint(self, message: &str) -> Result<(), JsValue> {
+    pub fn tprint(self, message: String) -> Result<(), JsValue> {
         let tprint: Function = self._ns.get("tprint")?;
 
         tprint.arg(message.into()).call()?;

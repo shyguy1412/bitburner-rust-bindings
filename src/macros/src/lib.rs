@@ -2,7 +2,7 @@ use proc_macro::{Span, TokenStream};
 use syn::parse_macro_input;
 
 #[proc_macro_attribute]
-pub fn bb_bindgen(attr: TokenStream, input: TokenStream) -> TokenStream{
+pub fn bb_bindgen(_: TokenStream, input: TokenStream) -> TokenStream{
     let mut body = parse_macro_input!(input as syn::ItemFn);
 
     

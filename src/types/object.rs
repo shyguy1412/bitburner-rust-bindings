@@ -3,12 +3,12 @@ use wasm_bindgen::{JsError, JsValue};
 use super::{Function, Get, String};
 
 #[derive(Clone)]
-pub struct Object(JsValue);
+pub struct Object(pub(super) JsValue, pub(super) JsValue);
 
 
 impl Object {
     pub fn new(val: JsValue) -> Self {
-        Self(val)
+        Self(val, JsValue::undefined())
     }
 }
 

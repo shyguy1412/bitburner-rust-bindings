@@ -1,19 +1,14 @@
-use std::ops::Deref;
-
-use wasm_bindgen::{JsError, JsValue, convert::FromWasmAbi};
+use wasm_bindgen::{JsError, JsValue};
 
 use super::{Function, Get};
 
-#[derive(Clone)]
-pub struct String(JsValue);
-
+pub struct String(pub(super) JsValue, pub(super) JsValue);
 
 impl String {
     pub fn new(val: JsValue) -> Self {
-        Self(val)
+        Self(val, JsValue::undefined())
     }
 }
-
 
 impl Get<Function> for String {
     fn get(&self, key: &str) -> Result<Function, JsValue> {
@@ -40,11 +35,5 @@ impl Get<String> for String {
         };
 
         Ok(String::new(prop.into()))
-    }
-}
-
-impl Into<std::string::String> for String {
-    fn into(self) -> std::string::String {
-        self.0.as_string().unwrap()
     }
 }
