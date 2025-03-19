@@ -1,14 +1,14 @@
-use wasm_bindgen::convert::FromWasmAbi;
+use wasm_bindgen::JsValue;
 use wasm_bindgen::describe::EXTERNREF;
 use wasm_bindgen::describe::WasmDescribe;
 use wasm_bindgen::describe::inform;
-
 mod types;
+pub use bitburner_bindings_macros::bb_bindgen;
 pub use types::*;
-use wasm_bindgen::JsValue;
 
 pub struct NS {
     _ns: Object,
+    pub args: Object,
 }
 
 impl WasmDescribe for NS {
@@ -17,22 +17,23 @@ impl WasmDescribe for NS {
     }
 }
 
-impl FromWasmAbi for NS {
-    type Abi = u32;
-
-    unsafe fn from_abi(js: Self::Abi) -> Self {
-        NS {
-            _ns: Object::from(js),
-        }
-    }
-}
-
-
 impl NS {
-    pub fn tprint(self, message: &str) -> Result<(), JsValue>{
-        let tprint: Function = self._ns.get("tprinst")?;
+    pub fn tprint(self, message: &str) -> Result<(), JsValue> {
+        let tprint: Function = self._ns.get("tprint")?;
 
         tprint.arg(message.into()).call()?;
         Ok(())
+    }
+}
+
+impl TryFrom<JsValue> for NS {
+    type Error = JsValue;
+
+    fn try_from(value: JsValue) -> Result<Self, Self::Error> {
+        let _ns = Object::new(value);
+        Ok(NS {
+            args: _ns.get(&"args")?,
+            _ns,
+        })
     }
 }

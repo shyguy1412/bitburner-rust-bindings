@@ -128,15 +128,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bitburner_bindings"
-version = "0.1.0"
-dependencies = [
- "bitburner_bindings_macros",
- "js-sys",
- "wasm-bindgen",
-]
-
-[[package]]
 name = "bitburner_bindings_macros"
 version = "0.1.0"
 dependencies = [

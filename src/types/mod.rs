@@ -1,6 +1,9 @@
 mod object;
 pub use object::Object;
 
+mod string;
+pub use string::String;
+
 mod function;
 pub use function::Function;
 

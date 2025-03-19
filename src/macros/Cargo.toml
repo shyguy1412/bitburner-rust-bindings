@@ -1,0 +1,13 @@
+[package]
+name = "bitburner_bindings_macros"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+quote = "1.0.40"
+swc = "16.1.1"
+syn = "2.0.100"
+
