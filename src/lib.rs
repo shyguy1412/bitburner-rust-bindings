@@ -32,7 +32,7 @@ impl TryFrom<JsValue> for NS {
     type Error = JsValue;
 
     fn try_from(value: JsValue) -> Result<Self, Self::Error> {
-        let _ns = Object::new(value);
+        let _ns = Object::new(value, JsValue::undefined());
         Ok(NS {
             args: _ns.get(&"args")?,
             _ns,

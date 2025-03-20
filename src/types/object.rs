@@ -3,19 +3,14 @@ use wasm_bindgen::{JsError, JsValue};
 use super::{Function, Get, String};
 
 #[derive(Clone)]
-pub struct Object(pub(super) JsValue, pub(super) JsValue);
-
-
-impl Object {
-    pub fn new(val: JsValue) -> Self {
-        Self(val, JsValue::undefined())
-    }
+pub struct Object{
+  pub(super) value: JsValue,
+  pub(super) context: JsValue
 }
-
 
 impl Get<Function> for Object {
     fn get(&self, key: &str) -> Result<Function, JsValue> {
-        let prop = js_sys::Reflect::get(&self.0, &JsValue::from(key)).unwrap();
+        let prop = js_sys::Reflect::get(&self.value, &JsValue::from(key)).unwrap();
 
         if !prop.is_function() {
             return Err(
@@ -23,13 +18,13 @@ impl Get<Function> for Object {
             );
         };
 
-        Ok(Function::new(prop.into(), self.0.clone()))
+        Ok(Function::new(prop.into(), self.value.clone()))
     }
 }
 
 impl Get<Object> for Object {
     fn get(&self, key: &str) -> Result<Object, JsValue> {
-        let prop = js_sys::Reflect::get(&self.0, &JsValue::from(key)).unwrap();
+        let prop = js_sys::Reflect::get(&self.value, &JsValue::from(key)).unwrap();
 
         if !prop.is_object() {
             return Err(
@@ -37,13 +32,13 @@ impl Get<Object> for Object {
             );
         };
 
-        Ok(Object::new(prop.into()))
+        Ok(Object::new(prop.into(), self.context.clone()))
     }
 }
 
 impl Get<String> for Object {
     fn get(&self, key: &str) -> Result<String, JsValue> {
-        let prop = js_sys::Reflect::get(&self.0, &JsValue::from(key)).unwrap();
+        let prop = js_sys::Reflect::get(&self.value, &JsValue::from(key)).unwrap();
 
         if !prop.is_string() {
             return Err(
@@ -51,7 +46,7 @@ impl Get<String> for Object {
             );
         };
 
-        Ok(String::new(prop.into()))
+        Ok(String::new(prop.into(), self.context.clone()))
     }
 }
 

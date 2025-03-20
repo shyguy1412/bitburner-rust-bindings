@@ -2,17 +2,15 @@ use wasm_bindgen::{JsError, JsValue};
 
 use super::{Function, Get};
 
-pub struct String(pub(super) JsValue, pub(super) JsValue);
-
-impl String {
-    pub fn new(val: JsValue) -> Self {
-        Self(val, JsValue::undefined())
-    }
+pub struct String{
+  pub(super) value: JsValue,
+  pub(super) context: JsValue
 }
+
 
 impl Get<Function> for String {
     fn get(&self, key: &str) -> Result<Function, JsValue> {
-        let prop = js_sys::Reflect::get(&self.0, &JsValue::from(key)).unwrap();
+        let prop = js_sys::Reflect::get(&self.value, &JsValue::from(key)).unwrap();
 
         if !prop.is_function() {
             return Err(
@@ -20,13 +18,13 @@ impl Get<Function> for String {
             );
         };
 
-        Ok(Function::new(prop.into(), self.0.clone()))
+        Ok(Function::new(prop, self.value.clone()))
     }
 }
 
 impl Get<String> for String {
     fn get(&self, key: &str) -> Result<String, JsValue> {
-        let prop = js_sys::Reflect::get(&self.0, &JsValue::from(key)).unwrap();
+        let prop = js_sys::Reflect::get(&self.value, &JsValue::from(key)).unwrap();
 
         if !prop.is_string() {
             return Err(
@@ -34,6 +32,6 @@ impl Get<String> for String {
             );
         };
 
-        Ok(String::new(prop.into()))
+        Ok(String::new(prop.into(), self.context.clone()))
     }
 }

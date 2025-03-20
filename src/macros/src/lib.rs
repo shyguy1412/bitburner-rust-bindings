@@ -21,3 +21,16 @@ pub fn bb_bindgen(_: TokenStream, input: TokenStream) -> TokenStream{
         #body
     }.into()
 }
+
+
+#[proc_macro]
+pub fn into_specific(input: TokenStream) -> TokenStream{
+    let type_to_cast = parse_macro_input!(input as syn::Type);
+
+    let out_stream = TokenStream::new();
+
+    quote::quote! {
+
+    }.into()
+}
+

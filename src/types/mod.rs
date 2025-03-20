@@ -30,17 +30,27 @@ macro_rules! magic {
   ($($t:ident)*) => ($(
     impl std::ops::Deref for $t {
       type Target = wasm_bindgen::JsValue;
-      
+
       fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.value
       }
     }
-    
+
     impl Into<Any> for $t {
       fn into(self) -> Any {
-        Any(self.0.into(), self.1)
+        Any::new(self.value.into(), self.context)
       }
     }
+
+    impl $t {
+      pub fn new(val: wasm_bindgen::JsValue, context: wasm_bindgen::JsValue) -> Self {
+          Self{
+            value: val.into(),
+            context
+          }
+      }
+  }
+
   )*)
 }
 
