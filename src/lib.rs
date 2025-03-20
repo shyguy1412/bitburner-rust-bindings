@@ -20,11 +20,19 @@ impl WasmDescribe for NS {
 }
 
 impl NS {
-    pub fn tprint(self, message: String) -> Result<(), JsValue> {
+    pub fn tprint(&self, message: String) -> Result<(), JsValue> {
         let tprint: Function = self._ns.get("tprint")?;
 
         tprint.arg(message.into()).call()?;
         Ok(())
+    }
+
+    pub fn sleep(&self, amount: Number) -> Result<Object, JsValue>{
+        let sleep: Function = self._ns.get("sleep")?;
+        
+        let retval:Object = sleep.arg(amount.into()).call()?.try_into()?;
+
+        Ok(retval)
     }
 }
 

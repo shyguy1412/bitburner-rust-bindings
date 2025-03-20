@@ -62,6 +62,7 @@ macro_rules! magic {
       $type, $error, Undefined, $type_str
       $type, $error, Symbol, $type_str
       $type, $error, BigInt, $type_str
+      $type, $error, Number, $type_str
     }
 
   )*)
@@ -75,7 +76,9 @@ magic! {
   (Undefined, "undefined") => "Property {} is not undefined"
   (Symbol, "symbol") => "Property {} is not a symbol"
   (BigInt, "bigint") => "Property {} is not a bigInt"
+  (Number, "number") => "Property {} is not a number"
 }
+
 
 impl Function {
     pub fn arg(&self, arg: Any) -> Self {

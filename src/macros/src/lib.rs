@@ -13,9 +13,9 @@ pub fn bb_bindgen(_: TokenStream, input: TokenStream) -> TokenStream{
 
     quote::quote! {
         #[wasm_bindgen::prelude::wasm_bindgen]
-        pub fn #og_ident(val:JsValue) -> Result<(), wasm_bindgen::JsValue>{
+        pub async fn #og_ident(val:JsValue) -> Result<(), wasm_bindgen::JsValue>{
           let ns = bitburner_bindings::NS::try_from(val)?;
-          #fn_ident(ns)
+          #fn_ident(ns).await
         }
 
         #body
