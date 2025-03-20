@@ -1,4 +1,4 @@
-use bitburner_bindings_macros::into_specific;
+use super::*;
 use wasm_bindgen::{JsError, JsValue};
 
 pub struct Any {
@@ -7,37 +7,40 @@ pub struct Any {
 }
 
 impl Any {
-  pub fn new(value: JsValue, context: JsValue) -> Self {
-    Any { value, context }
-  }
+    pub fn new(value: JsValue, context: JsValue) -> Self {
+        Any { value, context }
+    }
 }
 
-into_specific!(Any);
-// macro_rules! into_known {
-//   ($($t:ty)*) => ($(
+macro_rules! try_into {
+  ($($t:ident => $m:literal)*) => ($(
+    impl TryInto<$t> for Any {
+      type Error = JsValue;
+      fn try_into(self) -> Result<$t, Self::Error> {
+          if self.value.is_function() {
+              return Ok($t::new(self.value.into(), self.context));
+          };
 
-//     impl TryInto<Any> for $t {
-//       type Error = JsValue;
-//       fn try_into(self) -> $t {
-//         if !self.is_function() {
-//             return Err(
-//                 JsError::new(&("Property '".to_owned() + key + "' is not a function")).into(),
-//             );
-//         };
+          return Err(JsError::new(
+              format!(
+                  $m,
+                  self.value.js_typeof().as_string().unwrap()
+              )
+              .as_str(),
+          )
+          .into());
+      }
+  }
 
-//         Ok(Function::new(prop, self.value.clone()))
-//       }
-//     }
+  )*)
+}
 
-//   )*)
-// }
-
-// // String
-// into_known! {
-//   Object
-//   Function
-//   Boolean
-//   Undefined
-//   Symbol
-//   BigInt
-// }
+try_into! {
+  Function => "Cannot cast {} into a function"
+  Object => "Cannot cast {} into an object"
+  Undefined => "{} is not undefined"
+  BigInt =>  "Can not cast {} into a bigint"
+  Boolean => "Can not cast {} into a boolean"
+  Symbol => "Can not cast {} into a symbol"
+  String => "Can not cast {} into a string"
+}
