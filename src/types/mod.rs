@@ -1,5 +1,6 @@
 mod any;
 pub use any::Any;
+use wasm_bindgen::JsValue;
 
 pub trait Get<T> {
     fn get(&self, key: &str) -> Result<T, wasm_bindgen::JsValue>;
@@ -45,6 +46,16 @@ macro_rules! magic {
       }
     }
 
+    impl IntoFuture for $type {
+      type Output = Result<Any, JsValue>;
+
+      type IntoFuture = Any;
+
+      fn into_future(self) -> Self::IntoFuture {
+        self.into()
+      }
+    }
+
     impl $type {
       pub fn new(val: wasm_bindgen::JsValue, context: wasm_bindgen::JsValue) -> Self {
           Self{
@@ -78,7 +89,6 @@ magic! {
   (BigInt, "bigint") => "Property {} is not a bigInt"
   (Number, "number") => "Property {} is not a number"
 }
-
 
 impl Function {
     pub fn arg(&self, arg: Any) -> Self {
