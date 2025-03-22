@@ -57,12 +57,18 @@ macro_rules! magic {
     }
 
     impl $type {
-      pub fn new(val: wasm_bindgen::JsValue, context: wasm_bindgen::JsValue) -> Self {
-          Self{
-            value: val.into(),
-            context
-          }
+      pub fn new(value: wasm_bindgen::JsValue, context: wasm_bindgen::JsValue) -> Self {
+          Self{value, context}
       }
+      pub fn unwrap(&self) -> JsValue{
+        self.value.clone()
+      }
+    }
+
+    impl From<JsValue> for $type {
+       fn from(val:JsValue) -> $type {
+          $type::new(val, JsValue::undefined())
+       }
     }
 
     impl_get!{
@@ -90,7 +96,36 @@ magic! {
   (Number, "number") => "Property {} is not a number"
 }
 
+#[macro_export]
+macro_rules! js_closure {
+  ($t:expr) => (
+      Function::from(Box::new(|args: js_sys::Array| -> JsValue {
+          let args = Any::from(Into::<JsValue>::into(args));
+
+          let ret = $t(args);
+
+          match ret {
+              Ok(v) => v.unwrap(),
+              Err(v) => v
+          }
+      }))
+  )
+}
+
 impl Function {
+    pub fn from(value: Box<dyn Fn(js_sys::Array) -> JsValue>) -> Self {
+        let js_wrapper =
+            js_sys::Function::new_with_args("fn", "return (...args) => fn.apply(undefined, args)");
+        let js_wrapper = Function::new(js_wrapper.into(), JsValue::undefined());
+        let closure = wasm_bindgen::closure::Closure::wrap(value);
+        let closure = Any::new(closure.into_js_value().into(), JsValue::undefined());
+        let closure = js_wrapper
+            .arg(closure)
+            .call()
+            .expect("If this throws black magic fuckery happened");
+        Function::new(closure.unwrap(), JsValue::undefined())
+    }
+
     pub fn arg(&self, arg: Any) -> Self {
         let context = if self.is_bound() {
             wasm_bindgen::JsValue::undefined()
@@ -119,5 +154,41 @@ impl Function {
         let this: js_sys::Function = self.value.clone().into();
 
         return !this.has_own_property(&wasm_bindgen::JsValue::from("prototype"));
+    }
+}
+
+impl Into<Number> for f64 {
+    fn into(self) -> Number {
+        Number {
+            value: JsValue::from(self),
+            context: JsValue::undefined(),
+        }
+    }
+}
+
+impl Into<String> for &str {
+    fn into(self) -> String {
+        String {
+            value: JsValue::from(self),
+            context: JsValue::undefined(),
+        }
+    }
+}
+
+impl Into<String> for std::string::String {
+    fn into(self) -> String {
+        String {
+            value: JsValue::from(self),
+            context: JsValue::undefined(),
+        }
+    }
+}
+
+impl Into<Undefined> for () {
+    fn into(self) -> Undefined {
+        Undefined {
+            value: JsValue::undefined(),
+            context: JsValue::undefined(),
+        }
     }
 }

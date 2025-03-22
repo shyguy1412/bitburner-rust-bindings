@@ -24,6 +24,15 @@ impl Any {
             inner: None,
         }
     }
+    pub fn unwrap(&self) -> JsValue {
+        self.value.clone()
+    }
+}
+
+impl From<JsValue> for Any {
+    fn from(value: JsValue) -> Self {
+        Any::new(value, JsValue::undefined())
+    }
 }
 
 impl std::ops::Deref for Any {
