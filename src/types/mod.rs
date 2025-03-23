@@ -96,6 +96,12 @@ magic! {
   (Number, "number") => "Property {} is not a number"
 }
 
+#[wasm_bindgen::prelude::wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console, js_name = error)]
+    pub fn log_error(s: JsValue);
+}
+
 #[macro_export]
 macro_rules! js_closure {
   ($t:expr) => (
@@ -106,7 +112,7 @@ macro_rules! js_closure {
 
           match ret {
               Ok(v) => v.unwrap(),
-              Err(v) => v
+              Err(v) => {bitburner_bindings::log_error(v.clone()); v}
           }
       }))
   )

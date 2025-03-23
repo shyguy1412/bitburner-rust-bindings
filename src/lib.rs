@@ -28,6 +28,13 @@ impl NS {
         Ok(retval)
     }
 
+    pub fn asleep(&self, amount: Number) -> Result<Object, JsValue> {
+        let asleep: Function = self._ns.get("asleep")?;
+        let retval: Object = asleep.arg(amount.into()).call()?.try_into()?;
+
+        Ok(retval)
+    }
+
     #[allow(non_snake_case)]
     pub fn atExit(&self, callback: Function, id:String) -> Result<Undefined, JsValue> {
         let at_exit: Function = self._ns.get("atExit")?;

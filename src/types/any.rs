@@ -35,6 +35,13 @@ impl From<JsValue> for Any {
     }
 }
 
+impl From<()> for Any {
+    fn from(_: ()) -> Self {
+        Any::new(JsValue::undefined(), JsValue::undefined())
+    }
+}
+
+
 impl std::ops::Deref for Any {
     type Target = wasm_bindgen::JsValue;
 

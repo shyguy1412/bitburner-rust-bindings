@@ -17,3 +17,6 @@ features = ["v4"]
 
 [dependencies.bitburner_bindings_macros]
 path = "./src/macros"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+uuid = { version = "1.13.1", default-features = false, features = ["js"] }
