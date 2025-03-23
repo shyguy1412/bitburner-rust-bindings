@@ -6,6 +6,9 @@ pub trait Get<T> {
     fn get(&self, key: &str) -> Result<T, wasm_bindgen::JsValue>;
 }
 
+//This one is pretty sane
+//It implements a getter for any type that validates
+//that the returned prop is actually that type
 macro_rules! impl_get {
   ($($type:ident, $error:literal, $parent:ident, $type_str:literal)*) => ($(
     impl Get<$type> for $parent {
@@ -24,6 +27,7 @@ macro_rules! impl_get {
   )*)
 }
 
+//I macro'd the fuck out of this. Idk how to even explain whats going on
 macro_rules! magic {
   ($(($type:ident, $type_str:literal) => $error:literal)*) => ($(
 
@@ -71,6 +75,7 @@ macro_rules! magic {
        }
     }
 
+    //I heard you like macros, so I marcod your macro
     impl_get!{
       $type, $error, String, $type_str
       $type, $error, Object, $type_str
@@ -85,6 +90,7 @@ macro_rules! magic {
   )*)
 }
 
+//Again, english fucking suuuucks
 magic! {
   (String, "string") => "Property {} is not a string"
   (Object, "object") => "Property {} is not an object"
@@ -102,37 +108,51 @@ extern "C" {
     pub fn log_error(s: JsValue);
 }
 
+//Probably a mem leak but idc rn. Just dont spam closures ig ¯\_(ツ)_/¯
 #[macro_export]
 macro_rules! js_closure {
-  ($t:expr) => (
-      Function::from(Box::new(|args: js_sys::Array| -> JsValue {
-          let args = Any::from(Into::<JsValue>::into(args));
+    ($t:expr) => {
+        Function::from(Box::new(|args: js_sys::Array| -> JsValue {
+            let args = Any::from(Into::<JsValue>::into(args));
 
-          let ret = $t(args);
+            let ret = $t(args);
 
-          match ret {
-              Ok(v) => v.unwrap(),
-              Err(v) => {bitburner_bindings::log_error(v.clone()); v}
-          }
-      }))
-  )
+            match ret {
+                Ok(v) => v.unwrap(),
+                Err(v) => {
+                    bitburner_bindings::log_error(v.clone());
+                    v
+                }
+            }
+        }))
+    };
 }
 
 impl Function {
     pub fn from(value: Box<dyn Fn(js_sys::Array) -> JsValue>) -> Self {
+        //this is evil
+        //in order to have variadic functions I need to collect all args into one array and pass that instead
         let js_wrapper =
-            js_sys::Function::new_with_args("fn", "return (...args) => fn.apply(undefined, args)");
+            js_sys::Function::new_with_args("fn", "return (...args) => () => fn(args)");
         let js_wrapper = Function::new(js_wrapper.into(), JsValue::undefined());
+
         let closure = wasm_bindgen::closure::Closure::wrap(value);
         let closure = Any::new(closure.into_js_value().into(), JsValue::undefined());
+
+        //This wraps the wasm closure in the argument collector wrapper
         let closure = js_wrapper
             .arg(closure)
             .call()
             .expect("If this throws black magic fuckery happened");
+
         Function::new(closure.unwrap(), JsValue::undefined())
     }
 
+    //workaround for variadic function
     pub fn arg(&self, arg: Any) -> Self {
+
+        //this binding is insane. this doesnt even work
+        //but nothing broke yet sooooooooo idc
         let context = if self.is_bound() {
             wasm_bindgen::JsValue::undefined()
         } else {

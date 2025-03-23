@@ -4,12 +4,14 @@ use wasm_bindgen::{JsError, JsValue};
 use std::cell::RefCell;
 use std::rc::Rc;
 
+/** This struct represents any possible JS value */
 pub struct Any {
     pub(super) value: JsValue,
     pub(super) context: JsValue,
     inner: Option<Rc<RefCell<Inner>>>,
 }
 
+/** Stolen from wasm_bindgen_futures (dont tell anyone x.x) */
 struct Inner {
     result: Option<Result<Any, JsValue>>,
     task: Option<std::task::Waker>,
@@ -41,7 +43,6 @@ impl From<()> for Any {
     }
 }
 
-
 impl std::ops::Deref for Any {
     type Target = wasm_bindgen::JsValue;
 
@@ -50,6 +51,10 @@ impl std::ops::Deref for Any {
     }
 }
 
+/**
+ * This macro implements casting from Any into any other type
+ * Actual validation of types is handled by the corresponding wrapper struct
+ */
 macro_rules! try_into {
   ($(($t:ident, $ts:literal) => $m:literal)*) => ($(
     impl TryInto<$t> for Any {
@@ -73,6 +78,9 @@ macro_rules! try_into {
   )*)
 }
 
+//fuck english so fucking much
+//since error messages cant be unique I need to pass to the macro ._.
+//(I also pass the corresponding typeof result cause I cant be fucked to make this a procedural macro )
 try_into! {
   (Function, "function") => "Cannot cast {} into a function"
   (Object, "object") => "Cannot cast {} into an object"
@@ -83,6 +91,7 @@ try_into! {
   (String, "string") => "Can not cast {} into a string"
 }
 
+//Also stolen from wasm_bindgen_future :3
 impl Future for Any {
     type Output = Result<Any, JsValue>;
 

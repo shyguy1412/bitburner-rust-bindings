@@ -1,6 +1,8 @@
 use proc_macro::{Span, TokenStream};
 use syn::parse_macro_input;
 
+
+//This wraps the main function with some casting and memory management
 #[proc_macro_attribute]
 pub fn bb_bindgen(_: TokenStream, input: TokenStream) -> TokenStream {
     let mut body = parse_macro_input!(input as syn::ItemFn);
@@ -17,6 +19,8 @@ pub fn bb_bindgen(_: TokenStream, input: TokenStream) -> TokenStream {
 
             let ret = #fn_ident(ns).await;
         
+            //This is unsafe af. Its so easy to write code that uses NS after cleanup
+            //idc tho, better cause errors than memory leaks
             ns.atExit(bitburner_bindings::js_closure!(|_: Any| -> Result<Any, JsValue> {
                 let ns = unsafe {Box::from_raw(ns as *const NS as *mut NS)};
                 drop(ns);
