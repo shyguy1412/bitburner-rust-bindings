@@ -13,17 +13,22 @@ pub fn bb_bindgen(_: TokenStream, input: TokenStream) -> TokenStream {
     quote::quote! {
         #[wasm_bindgen::prelude::wasm_bindgen]
         pub async fn #og_ident(val:JsValue) -> Result<(), wasm_bindgen::JsValue>{
-          let ns = Box::new(bitburner_bindings::NS::try_from(val)?);
-          let ns_ptr = Box::into_raw(ns);
-          let ns = unsafe{ns_ptr.as_ref().unwrap()};
-          #fn_ident(ns).await;
-          ns.atExit(bitburner_bindings::js_closure!(|args: Any| -> Result<Any, JsValue> {
-              // drop(core::ptr::drop_in_place(ns_ptr));
-              Ok(bitburner_bindings::Any::from(wasm_bindgen::JsValue::undefined()))
-          }), bitburner_bindings::v4uuid())?;
-          Ok(())
+            let ns = Box::leak(Box::new(bitburner_bindings::NS::try_from(val.clone())?));
+
+            let ret = #fn_ident(ns).await;
+        
+            ns.atExit(bitburner_bindings::js_closure!(|_: Any| -> Result<Any, JsValue> {
+                let ns = unsafe {Box::from_raw(ns as *const NS as *mut NS)};
+                drop(ns);
+                Ok(bitburner_bindings::Any::from(
+                    wasm_bindgen::JsValue::undefined(),
+                ))
+            }),bitburner_bindings::v4uuid())?;
+        
+            ret
         }
 
         #body
-    }.into()
+    }
+    .into()
 }
