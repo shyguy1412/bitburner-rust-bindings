@@ -31,11 +31,13 @@ macro_rules! impl_get {
 macro_rules! magic {
   ($(($type:ident, $type_str:literal) => $error:literal)*) => ($(
 
+    //This creates the struct for string, number, etc...
     pub struct $type{
       pub(super) value: wasm_bindgen::JsValue,
       pub(super) context: wasm_bindgen::JsValue
     }
 
+    //So you can get a ref to the internal JsValue
     impl std::ops::Deref for $type {
       type Target = wasm_bindgen::JsValue;
 
@@ -44,12 +46,43 @@ macro_rules! magic {
       }
     }
 
+    //Cast any type into Any
     impl Into<Any> for $type {
       fn into(self) -> Any {
         Any::new(self.value.into(), self.context)
       }
     }
 
+    //wasm_bindgen black magic to convert the structs between JS and rust
+    impl wasm_bindgen::describe::WasmDescribe for $type {
+        fn describe() {
+            wasm_bindgen::describe::inform(wasm_bindgen::describe::EXTERNREF);
+        }
+    }
+
+    impl wasm_bindgen::convert::FromWasmAbi for $type {
+        type Abi = u32;
+
+        unsafe fn from_abi(js: Self::Abi) -> Self {
+            let any = unsafe { Any::from_abi(js) };
+            let value:Result<$type, JsValue> = any.try_into();
+            match value {
+                Ok(v) => v,
+                Err(v) => {log_error(v);panic!()}
+            }
+        }
+    }
+
+    impl wasm_bindgen::convert::IntoWasmAbi for $type {
+        type Abi = u32;
+        
+        fn into_abi(self) -> Self::Abi {
+            self.value.into_abi()
+        }
+    
+    }
+
+    //Any implements future so any type can be awaited if its cast to Any first
     impl IntoFuture for $type {
       type Output = Result<Any, JsValue>;
 
@@ -60,6 +93,10 @@ macro_rules! magic {
       }
     }
 
+    //this should be pretty obvious what it does
+    //(its the constructor)
+    //...
+    //(and a way to clone the internal JsValue)
     impl $type {
       pub fn new(value: wasm_bindgen::JsValue, context: wasm_bindgen::JsValue) -> Self {
           Self{value, context}
@@ -69,6 +106,10 @@ macro_rules! magic {
       }
     }
 
+    //Constantly typing $type::new(value, JsValue::undefined()) sucks
+    //The only reason context exists is functions anyway
+    //literally the only reason other values also have it is to make macros easier
+    //also context shouldnt get lost if you do fucky casting ig 
     impl From<JsValue> for $type {
        fn from(val:JsValue) -> $type {
           $type::new(val, JsValue::undefined())

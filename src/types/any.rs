@@ -1,4 +1,5 @@
 use super::*;
+use wasm_bindgen::convert::{FromWasmAbi, IntoWasmAbi};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::{JsError, JsValue};
 use std::cell::RefCell;
@@ -30,6 +31,33 @@ impl Any {
         self.value.clone()
     }
 }
+
+//this is appearently unstable but there its required for FromWasmAbi which is pretty fucked
+impl wasm_bindgen::describe::WasmDescribe for Any {
+    fn describe() {
+        wasm_bindgen::describe::inform(wasm_bindgen::describe::EXTERNREF);
+    }
+}
+
+//This lets rust functions exposed to JS take Any as parameter
+impl FromWasmAbi for Any {
+    type Abi = u32;
+
+    unsafe fn from_abi(js: Self::Abi) -> Self {
+        let value = unsafe { JsValue::from_abi(js) };
+        Any::new(value, JsValue::undefined())
+    }
+}
+
+//This lets JS functions bound to rust take Any as parameter
+impl IntoWasmAbi for Any {
+    type Abi = u32;
+    
+    fn into_abi(self) -> Self::Abi {
+        self.value.into_abi()
+    }
+}
+
 
 impl From<JsValue> for Any {
     fn from(value: JsValue) -> Self {
