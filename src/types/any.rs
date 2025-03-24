@@ -89,6 +89,7 @@ try_into! {
   (Boolean, "boolean") => "Can not cast {} into a boolean"
   (Symbol, "symbol") => "Can not cast {} into a symbol"
   (String, "string") => "Can not cast {} into a string"
+  (Number, "number") => "Can not cast {} into a number"
 }
 
 //Also stolen from wasm_bindgen_future :3
