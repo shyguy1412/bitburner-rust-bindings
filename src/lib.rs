@@ -5,8 +5,6 @@ pub use types::*;
 
 pub use bitburner_bindings_macros::bb_bindgen;
 
-pub use uuid;
-
 pub struct NS {
     _ns: Object,
     pub args: Object,
