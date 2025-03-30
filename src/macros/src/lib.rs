@@ -22,8 +22,14 @@ pub fn bb_bindgen(_: TokenStream, input: TokenStream) -> TokenStream {
         pub async fn #og_ident(val:JsValue) -> Result<(), wasm_bindgen::JsValue>{
             let ns = Box::leak(Box::new(bitburner_bindings::NS::try_from(val.clone())?));
 
+            std::panic::set_hook(Box::new(|err| {
+                bitburner_bindings::log_error(err.to_string().into())
+            }));
+
             let ret = #fn_ident(ns).await;
-        
+
+            drop(std::panic::take_hook());
+
             //This is unsafe af. Its so easy to write code that uses NS after cleanup
             //idc tho, better cause errors than memory leaks
             ns.atExit(bitburner_bindings::js_closure!(|_: Any| -> Result<Any, JsValue> {
@@ -33,7 +39,7 @@ pub fn bb_bindgen(_: TokenStream, input: TokenStream) -> TokenStream {
                     wasm_bindgen::JsValue::undefined(),
                 ))
             }),bitburner_bindings::v4uuid())?;
-        
+
             ret
         }
 
@@ -54,9 +60,7 @@ pub fn from_dts(input: TokenStream) -> TokenStream {
         .body
         .iter()
         .filter_map(|item| match item.is_stmt() {
-            true => item
-                .as_stmt()
-                .and_then(|item| item.as_decl()),
+            true => item.as_stmt().and_then(|item| item.as_decl()),
             false => item
                 .as_module_decl()
                 .and_then(|item| item.as_export_decl())
