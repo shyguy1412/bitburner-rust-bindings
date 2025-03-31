@@ -30,7 +30,7 @@ pub(self) fn safe_convert_ident(ident: &swc_ecma_ast::Ident) -> syn::Ident {
 
 macro_rules! parse_quote {
     ({$($tt:tt)*} as $t:ty => $e:literal) => {
-      syn::parse::<$t>(quote::quote!{$($tt)*}.into()).expect($e)
+        syn::parse::<$t>(quote::quote!{$($tt)*}.into()).expect($e)
     };
 }
 pub(crate) use parse_quote;
