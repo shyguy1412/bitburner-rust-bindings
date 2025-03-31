@@ -1,6 +1,6 @@
 use swc_ecma_ast::{TsEnumDecl, TsEnumMember};
 
-use super::parse_quote;
+use super::{parse_quote, safe_convert_ident};
 
 fn enum_member_to_match_arm(
     member: (&syn::Ident, &TsEnumMember),
@@ -20,7 +20,8 @@ fn enum_member_to_match_arm(
 }
 
 pub fn enum_to_struct(decl: TsEnumDecl) -> proc_macro::TokenStream {
-    let ident: syn::Ident = syn::parse_str(decl.id.sym.as_str()).expect("");
+    let ident: syn::Ident = safe_convert_ident(&decl.id);
+    
     let (variants, match_arms): (Vec<syn::Variant>, Vec<Option<syn::Arm>>) = decl
         .members
         .iter()

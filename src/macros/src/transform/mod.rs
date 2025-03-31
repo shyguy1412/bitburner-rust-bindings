@@ -16,6 +16,18 @@ pub fn declaration_to_struct(decl: Decl) -> proc_macro::TokenStream {
     }
 }
 
+/**
+ * Safely converts TS ident to Rust Ident by prefixing with _ if the ident is a reserved keyword in rust
+ */
+pub(self) fn safe_convert_ident(ident: &swc_ecma_ast::Ident) -> syn::Ident {
+    syn::parse_str::<syn::Ident>(ident.sym.as_str())
+        .or(syn::parse_str::<syn::Ident>(&format!(
+            "_{}",
+            ident.sym.as_str()
+        )))
+        .expect("")
+}
+
 macro_rules! parse_quote {
     ({$($tt:tt)*} as $t:ty => $e:literal) => {
       syn::parse::<$t>(quote::quote!{$($tt)*}.into()).expect($e)
