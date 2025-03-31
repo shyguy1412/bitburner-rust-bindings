@@ -51,7 +51,7 @@ impl NS {
         Ok(().into())
     }
 
-    pub fn toast(&self, message: String, variant: ToastVariant) -> Result<Undefined, JsValue> {
+    pub fn toast(&self, message: String, variant: ns::ToastVariant) -> Result<Undefined, JsValue> {
         let toast: Function = self._ns.get("toast")?;
 
         toast.arg(message.into()).arg(variant.into()).call()?;
