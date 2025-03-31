@@ -72,5 +72,7 @@ impl TryFrom<JsValue> for NS {
     }
 }
 
-// from_dts!("./Type.d.ts");
-from_dts!("./NetscriptDefinitions.d.ts");
+pub mod ns {
+    // crate::from_dts!("./Type.d.ts");
+    crate::from_dts!("./NetscriptDefinitions.d.ts");
+}
