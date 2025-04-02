@@ -54,40 +54,28 @@ pub fn interface_to_struct(decl: TsInterfaceDecl) -> proc_macro::TokenStream {
                 prev
             });
 
-    //I hate myself a little less
-    let methods: Vec<_> = {
-        let mut ident_map: HashMap<String, (usize, u8)> = HashMap::new();
-        
-        methods
-            .iter()
-            .map(method_signature_to_impl_item_fn)
-            .enumerate()
-            .map(|(i, mut method)| {
-                //append number to all duplicate methods starting at 1
-                let str = method.sig.ident.to_string();
-                if let Some((_, i)) = ident_map.get_mut(&str) {
+    //I dont hate myself :D
+    let methods: Vec<_> = methods
+        .iter()
+        .map(method_signature_to_impl_item_fn)
+        .collect::<Vec<syn::ImplItemFn>>()
+        .chunk_by(|prev, cur| prev.sig.ident.to_string() == cur.sig.ident.to_string())
+        .flat_map(|methods| match methods.len() {
+            0 => panic!("WHAT?? D:"),
+            1 => methods.to_vec(),
+            _ => methods
+                .to_vec()
+                .into_iter()
+                .enumerate()
+                .map(|(i, mut method)| {
+                    let str = method.sig.ident.to_string();
                     method.sig.ident =
                         syn::Ident::new(&format!("{}{}", str, i), method.sig.ident.span());
-                    *i += 1;
-                } else {
-                    ident_map.insert(str, (i, 1));
-                };
-                method
-            })
-            .collect::<Vec<syn::ImplItemFn>>()
-            .into_iter()
-            .enumerate()
-            .map(|(i, mut method)| {
-                //go back to the first occurance of a duplicate method and append 0
-                let str = method.sig.ident.to_string();
-                ident_map.get(&str).is_some_and(|(j, k)| i == *j && *k > 1).then(|| {
-                    method.sig.ident =
-                        syn::Ident::new(&format!("{}0", str), method.sig.ident.span());
-                });
-                method
-            })
-            .collect()
-    };
+                    method
+                })
+                .collect(),
+        })
+        .collect();
 
     let declaration = quote::quote! {
         pub struct #ident{
