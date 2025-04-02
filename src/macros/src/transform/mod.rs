@@ -1,17 +1,18 @@
 use swc_ecma_ast::Decl;
 
 mod r#enum;
-pub use r#enum::enum_to_struct;
+pub use r#enum::ts_enum_to_token_stream;
 mod interface;
-pub use interface::interface_to_struct;
+pub use interface::interface_to_token_stream;
 mod r#type;
-pub use r#type::type_alias_to_struct;
+pub use r#type::type_alias_to_token_stream;
+mod function;
 
-pub fn declaration_to_struct(decl: Decl) -> proc_macro::TokenStream {
+pub fn declaration_to_struct_token_stream(decl: &Decl) -> proc_macro::TokenStream {
     match decl {
-        Decl::TsInterface(decl) => interface_to_struct(*decl),
-        Decl::TsTypeAlias(decl) => type_alias_to_struct(*decl),
-        Decl::TsEnum(decl) => enum_to_struct(*decl),
+        Decl::TsInterface(decl) => interface_to_token_stream(decl.as_ref()),
+        Decl::TsTypeAlias(decl) => type_alias_to_token_stream(decl.as_ref()),
+        Decl::TsEnum(decl) => ts_enum_to_token_stream(decl.as_ref()),
         _ => proc_macro::TokenStream::new(),
     }
 }

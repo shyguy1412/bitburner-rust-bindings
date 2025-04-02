@@ -5,7 +5,7 @@ use syn::parse_macro_input;
 mod ast;
 use ast::get_ast_for_dts;
 mod transform;
-use transform::declaration_to_struct;
+use transform::declaration_to_struct_token_stream;
 
 //This wraps the main function with some casting and memory management
 #[proc_macro_attribute]
@@ -66,10 +66,10 @@ pub fn from_dts(input: TokenStream) -> TokenStream {
                 .and_then(|item| item.as_export_decl())
                 .and_then(|item| Some(&item.decl)),
         })
-        .filter_map(|decl| match decl.clone() {
+        .filter_map(|decl| match decl {
             Decl::Using(_) => None,
             Decl::TsModule(_) => None,
-            node => Some(declaration_to_struct(node)),
+            node => Some(declaration_to_struct_token_stream(&node)),
         })
         .fold(TokenStream::new(), |mut prev, cur| {
             prev.extend(cur);

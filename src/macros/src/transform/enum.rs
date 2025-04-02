@@ -19,7 +19,7 @@ fn enum_member_to_match_arm(
     (variant, arm)
 }
 
-pub fn enum_to_struct(decl: TsEnumDecl) -> proc_macro::TokenStream {
+pub fn ts_enum_to_token_stream(decl: &TsEnumDecl) -> proc_macro::TokenStream {
     let ident: syn::Ident = safe_convert_ident(&decl.id).unwrap();
     
     let (variants, match_arms): (Vec<syn::Variant>, Vec<Option<syn::Arm>>) = decl

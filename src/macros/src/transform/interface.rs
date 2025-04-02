@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use swc_ecma_ast::{
     TsCallSignatureDecl, TsConstructSignatureDecl, TsGetterSignature, TsIndexSignature,
     TsInterfaceDecl, TsMethodSignature, TsPropertySignature, TsSetterSignature, TsTypeElement,
@@ -35,7 +33,7 @@ impl TypeElements {
 
 pub fn interface_to_struct(decl: TsInterfaceDecl) -> proc_macro::TokenStream {
     let ident: syn::Ident = syn::parse_str(&format!("{}{}", "", decl.id.sym.as_str())).expect("");
-    let TypeElements { props, methods, .. } =
+    let TypeElements { methods, .. } =
         decl.body
             .body
             .iter()
