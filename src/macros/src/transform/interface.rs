@@ -105,7 +105,7 @@ fn method_signature_to_impl_item_fn(method: &TsMethodSignature) -> syn::ImplItem
     let ident = method
         .key
         .as_ident()
-        .and_then(|ident| Some(safe_convert_ident(ident)))
+        .and_then(safe_convert_ident)
         .expect("computed method signatures are not supported yet");
 
     parse_quote!({
