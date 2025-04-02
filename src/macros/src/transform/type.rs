@@ -1,3 +1,12 @@
+use swc_ecma_ast::{
+    TsArrayType, TsConditionalType, TsFnOrConstructorType, TsImportType, TsIndexedAccessType,
+    TsInferType, TsKeywordType, TsLitType, TsMappedType, TsOptionalType, TsParenthesizedType,
+    TsRestType, TsThisType, TsTupleType, TsTypeAliasDecl, TsTypeAnn, TsTypeLit, TsTypeOperator,
+    TsTypePredicate, TsTypeQuery, TsTypeRef, TsUnionOrIntersectionType,
+};
+
+use crate::transform::parse_quote;
+
 pub fn type_alias_to_token_stream(decl: &TsTypeAliasDecl) -> proc_macro::TokenStream {
     let ident: syn::Ident = syn::parse_str(&format!("{}{}", "", decl.id.sym.as_str())).expect("");
 
@@ -5,4 +14,112 @@ pub fn type_alias_to_token_stream(decl: &TsTypeAliasDecl) -> proc_macro::TokenSt
       struct #ident{}
     }
     .into()
+}
+
+pub fn type_annotation_to_type(ann: &TsTypeAnn) -> Option<syn::Type> {
+    match &*ann.type_ann {
+        swc_ecma_ast::TsType::TsKeywordType(node) => keyword_type_to_type(node),
+        swc_ecma_ast::TsType::TsThisType(node) => this_type_to_type(node),
+        swc_ecma_ast::TsType::TsFnOrConstructorType(node) => fn_or_constructor_type_to_type(node),
+        swc_ecma_ast::TsType::TsTypeRef(node) => type_ref_to_type(node),
+        swc_ecma_ast::TsType::TsTypeQuery(node) => type_query_to_type(node),
+        swc_ecma_ast::TsType::TsTypeLit(node) => type_lit_to_type(node),
+        swc_ecma_ast::TsType::TsArrayType(node) => array_type_to_type(node),
+        swc_ecma_ast::TsType::TsTupleType(node) => tuple_type_to_type(node),
+        swc_ecma_ast::TsType::TsOptionalType(node) => optional_type_to_type(node),
+        swc_ecma_ast::TsType::TsRestType(node) => rest_type_to_type(node),
+        swc_ecma_ast::TsType::TsUnionOrIntersectionType(node) => {
+            union_or_intersection_type_to_type(node)
+        }
+        swc_ecma_ast::TsType::TsConditionalType(node) => conditional_type_to_type(node),
+        swc_ecma_ast::TsType::TsInferType(node) => infer_type_to_type(node),
+        swc_ecma_ast::TsType::TsParenthesizedType(node) => parenthesized_type_to_type(node),
+        swc_ecma_ast::TsType::TsTypeOperator(node) => type_operator_to_type(node),
+        swc_ecma_ast::TsType::TsIndexedAccessType(node) => indexed_access_type_to_type(node),
+        swc_ecma_ast::TsType::TsMappedType(node) => mapped_type_to_type(node),
+        swc_ecma_ast::TsType::TsLitType(node) => lit_type_to_type(node),
+        swc_ecma_ast::TsType::TsTypePredicate(node) => type_predicate_to_type(node),
+        swc_ecma_ast::TsType::TsImportType(node) => import_type_to_type(node),
+    }
+}
+
+pub fn keyword_type_to_type(_ty: &TsKeywordType) -> Option<syn::Type> {
+    Some(parse_quote!({crate::types::Any} as syn::Type => ""))
+}
+
+pub fn this_type_to_type(_ty: &TsThisType) -> Option<syn::Type> {
+    Some(parse_quote!({crate::types::Any} as syn::Type => ""))
+}
+
+pub fn fn_or_constructor_type_to_type(_ty: &TsFnOrConstructorType) -> Option<syn::Type> {
+    Some(parse_quote!({crate::types::Any} as syn::Type => ""))
+}
+
+pub fn type_ref_to_type(_ty: &TsTypeRef) -> Option<syn::Type> {
+    Some(parse_quote!({crate::types::Any} as syn::Type => ""))
+}
+
+pub fn type_query_to_type(_ty: &TsTypeQuery) -> Option<syn::Type> {
+    Some(parse_quote!({crate::types::Any} as syn::Type => ""))
+}
+
+pub fn type_lit_to_type(_ty: &TsTypeLit) -> Option<syn::Type> {
+    Some(parse_quote!({crate::types::Any} as syn::Type => ""))
+}
+
+pub fn array_type_to_type(_ty: &TsArrayType) -> Option<syn::Type> {
+    Some(parse_quote!({crate::types::Any} as syn::Type => ""))
+}
+
+pub fn tuple_type_to_type(_ty: &TsTupleType) -> Option<syn::Type> {
+    Some(parse_quote!({crate::types::Any} as syn::Type => ""))
+}
+
+pub fn optional_type_to_type(_ty: &TsOptionalType) -> Option<syn::Type> {
+    Some(parse_quote!({crate::types::Any} as syn::Type => ""))
+}
+
+pub fn rest_type_to_type(_ty: &TsRestType) -> Option<syn::Type> {
+    Some(parse_quote!({crate::types::Any} as syn::Type => ""))
+}
+
+pub fn union_or_intersection_type_to_type(_ty: &TsUnionOrIntersectionType) -> Option<syn::Type> {
+    Some(parse_quote!({crate::types::Any} as syn::Type => ""))
+}
+
+pub fn conditional_type_to_type(_ty: &TsConditionalType) -> Option<syn::Type> {
+    Some(parse_quote!({crate::types::Any} as syn::Type => ""))
+}
+
+pub fn infer_type_to_type(_ty: &TsInferType) -> Option<syn::Type> {
+    Some(parse_quote!({crate::types::Any} as syn::Type => ""))
+}
+
+pub fn parenthesized_type_to_type(_ty: &TsParenthesizedType) -> Option<syn::Type> {
+    Some(parse_quote!({crate::types::Any} as syn::Type => ""))
+}
+
+pub fn type_operator_to_type(_ty: &TsTypeOperator) -> Option<syn::Type> {
+    Some(parse_quote!({crate::types::Any} as syn::Type => ""))
+}
+
+pub fn indexed_access_type_to_type(_ty: &TsIndexedAccessType) -> Option<syn::Type> {
+    Some(parse_quote!({crate::types::Any} as syn::Type => ""))
+}
+
+pub fn mapped_type_to_type(_ty: &TsMappedType) -> Option<syn::Type> {
+    Some(parse_quote!({crate::types::Any} as syn::Type => ""))
+}
+
+pub fn lit_type_to_type(_ty: &TsLitType) -> Option<syn::Type> {
+    Some(parse_quote!({crate::types::Any} as syn::Type => ""))
+}
+
+pub fn type_predicate_to_type(_ty: &TsTypePredicate) -> Option<syn::Type> {
+    Some(parse_quote!({crate::types::Any} as syn::Type => ""))
+}
+
+pub fn import_type_to_type(_ty: &TsImportType) -> Option<syn::Type> {
+    None
+    // Some(parse_quote!({crate::types::Any} as syn::Type => ""))
 }

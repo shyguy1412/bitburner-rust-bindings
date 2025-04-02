@@ -3,9 +3,8 @@ use swc_ecma_ast::{
     TsInterfaceDecl, TsMethodSignature, TsPropertySignature, TsSetterSignature, TsTypeElement,
 };
 
-use crate::transform::safe_convert_ident;
 
-use super::parse_quote;
+use super::function::method_signature_to_impl_item_fn;
 
 struct TypeElements {
     constructors: Vec<TsConstructSignatureDecl>,
@@ -31,7 +30,7 @@ impl TypeElements {
     }
 }
 
-pub fn interface_to_struct(decl: TsInterfaceDecl) -> proc_macro::TokenStream {
+pub fn interface_to_token_stream(decl: &TsInterfaceDecl) -> proc_macro::TokenStream {
     let ident: syn::Ident = syn::parse_str(&format!("{}{}", "", decl.id.sym.as_str())).expect("");
     let TypeElements { methods, .. } =
         decl.body
@@ -91,26 +90,12 @@ pub fn interface_to_struct(decl: TsInterfaceDecl) -> proc_macro::TokenStream {
         })
         .collect();
 
-    let declaration = quote::quote! {
+    quote::quote! {
         pub struct #ident{
             _self: crate::Object
         }
         impl #ident {
             #(#methods)*
         }
-    };
-
-    declaration.into()
-}
-
-fn method_signature_to_impl_item_fn(method: &TsMethodSignature) -> syn::ImplItemFn {
-    let ident = method
-        .key
-        .as_ident()
-        .and_then(safe_convert_ident)
-        .expect("computed method signatures are not supported yet");
-
-    parse_quote!({
-        pub fn #ident(){} 
-    } as syn::ImplItemFn => "")
+    }.into()
 }
