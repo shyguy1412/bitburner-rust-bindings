@@ -67,11 +67,27 @@ pub fn interface_to_struct(decl: TsInterfaceDecl) -> proc_macro::TokenStream {
                 .to_vec()
                 .into_iter()
                 .enumerate()
-                .map(|(i, mut method)| {
-                    let str = method.sig.ident.to_string();
-                    method.sig.ident =
-                        syn::Ident::new(&format!("{}{}", str, i), method.sig.ident.span());
-                    method
+                .map(|(i, method)| syn::ImplItemFn {
+                    attrs: method.attrs,
+                    vis: method.vis,
+                    defaultness: method.defaultness,
+                    sig: syn::Signature {
+                        constness: method.sig.constness,
+                        asyncness: method.sig.asyncness,
+                        unsafety: method.sig.unsafety,
+                        abi: method.sig.abi,
+                        fn_token: method.sig.fn_token,
+                        ident: syn::Ident::new(
+                            &format!("{}{}", method.sig.ident.to_string(), i),
+                            method.sig.ident.span(),
+                        ),
+                        generics: method.sig.generics,
+                        paren_token: method.sig.paren_token,
+                        inputs: method.sig.inputs,
+                        variadic: method.sig.variadic,
+                        output: method.sig.output,
+                    },
+                    block: method.block,
                 })
                 .collect(),
         })
