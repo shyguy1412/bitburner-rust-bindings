@@ -1,12 +1,13 @@
 use itertools::Itertools;
 use proc_macro_error::{Diagnostic, Level};
-use swc_common::{CharPos, SourceMap, Span};
+use swc_common::{CharPos, SourceMap, Span, Spanned};
 
 #[derive(Debug)]
 pub enum Error {
     Unsupported(String),
     Syn(syn::Error),
     FuckYou(String),
+    TSSyntax(String),
 }
 
 impl Error {
@@ -51,6 +52,14 @@ impl Error {
             cm,
         ))
     }
+
+    pub fn ts_syntax(err: swc_ecma_parser::error::Error, cm: &SourceMap) -> Self {
+        Self::Unsupported(Self::create_message(
+            format!("TS Syntax Error:"),
+            err.span(),
+            cm,
+        ))
+    }
 }
 
 impl From<syn::Error> for Error {
@@ -71,6 +80,7 @@ impl Into<String> for Error {
             Error::Unsupported(feat) => feat,
             Error::Syn(error) => error.to_string(),
             Error::FuckYou(msg) => msg,
+            Error::TSSyntax(msg) => msg,
         }
     }
 }

@@ -1,12 +1,11 @@
 use proc_macro::{Span, TokenStream};
-use proc_macro_error::proc_macro_error;
+use proc_macro_error::{abort, proc_macro_error};
+use swc_common::{FileName, SourceMap};
 use swc_ecma_ast::Decl;
+use swc_ecma_parser::{Parser, StringInput, Syntax, lexer::Lexer};
 use syn::parse_macro_input;
-
-mod ast;
-use ast::get_ast_for_dts;
 mod transform;
-use transform::declaration_to_struct_token_stream;
+use transform::{declaration_to_struct_token_stream, error::Error};
 
 //This wraps the main function with some casting and memory management
 #[proc_macro_attribute]
@@ -54,8 +53,23 @@ pub fn bb_bindgen(_: TokenStream, input: TokenStream) -> TokenStream {
 pub fn from_dts(input: TokenStream) -> TokenStream {
     let path = parse_macro_input!(input as syn::LitStr).value();
 
+    let source_code = std::fs::read_to_string(&path).expect("File not found");
+    let source_map: SourceMap = Default::default();
+    let source_file = source_map.new_source_file(FileName::Custom(path).into(), source_code.into());
 
-    let (module, cm) = get_ast_for_dts(path).expect("fucky typescript??");
+    let lexer = Lexer::new(
+        Syntax::Typescript(Default::default()),
+        swc_ecma_ast::EsVersion::Es2024,
+        StringInput::from(&*source_file),
+        None,
+    );
+
+    let mut parser = Parser::new_from(lexer);
+
+    let module = match parser.parse_typescript_module() {
+        Ok(module) => module,
+        Err(err) => abort!(Error::ts_syntax(err, &source_map)),
+    };
 
     let structs_stream: TokenStream = module
         .body
@@ -70,12 +84,9 @@ pub fn from_dts(input: TokenStream) -> TokenStream {
         .filter_map(|decl| match decl {
             Decl::Using(_) => None,
             Decl::TsModule(_) => None,
-            node => Some(declaration_to_struct_token_stream(&node, &cm)),
+            node => Some(declaration_to_struct_token_stream(&node, &source_map)),
         })
-        .fold(TokenStream::new(), |mut prev, cur| {
-            prev.extend(cur);
-            prev
-        });
+        .collect();
 
     structs_stream
 }

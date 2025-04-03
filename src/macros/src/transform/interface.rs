@@ -7,17 +7,17 @@ use swc_ecma_ast::{
 
 use super::function::method_signature_to_impl_item_fn;
 
-struct TypeElements {
-    constructors: Vec<TsConstructSignatureDecl>,
-    getters: Vec<TsGetterSignature>,
-    setters: Vec<TsSetterSignature>,
-    props: Vec<TsPropertySignature>,
-    index_props: Vec<TsIndexSignature>,
-    methods: Vec<TsMethodSignature>,
-    call: Vec<TsCallSignatureDecl>,
+struct TypeElements<'a> {
+    constructors: Vec<&'a TsConstructSignatureDecl>,
+    getters: Vec<&'a TsGetterSignature>,
+    setters: Vec<&'a TsSetterSignature>,
+    props: Vec<&'a TsPropertySignature>,
+    index_props: Vec<&'a TsIndexSignature>,
+    methods: Vec<&'a TsMethodSignature>,
+    call: Vec<&'a TsCallSignatureDecl>,
 }
 
-impl TypeElements {
+impl TypeElements<'_> {
     fn new() -> Self {
         TypeElements {
             constructors: vec![],
@@ -31,7 +31,10 @@ impl TypeElements {
     }
 }
 
-pub fn interface_to_token_stream(decl: &TsInterfaceDecl, cm: &SourceMap) -> proc_macro::TokenStream {
+pub fn interface_to_token_stream(
+    decl: &TsInterfaceDecl,
+    cm: &SourceMap,
+) -> proc_macro::TokenStream {
     let ident: syn::Ident = syn::parse_str(&format!("{}{}", "", decl.id.sym.as_str())).expect("");
     let TypeElements { methods, .. } =
         decl.body
@@ -39,15 +42,13 @@ pub fn interface_to_token_stream(decl: &TsInterfaceDecl, cm: &SourceMap) -> proc
             .iter()
             .fold(TypeElements::new(), |mut prev, m| {
                 match m {
-                    TsTypeElement::TsCallSignatureDecl(node) => prev.call.push(node.clone()),
-                    TsTypeElement::TsConstructSignatureDecl(node) => {
-                        prev.constructors.push(node.clone())
-                    }
-                    TsTypeElement::TsPropertySignature(node) => prev.props.push(node.clone()),
-                    TsTypeElement::TsGetterSignature(node) => prev.getters.push(node.clone()),
-                    TsTypeElement::TsSetterSignature(node) => prev.setters.push(node.clone()),
-                    TsTypeElement::TsMethodSignature(node) => prev.methods.push(node.clone()),
-                    TsTypeElement::TsIndexSignature(node) => prev.index_props.push(node.clone()),
+                    TsTypeElement::TsCallSignatureDecl(node) => prev.call.push(node),
+                    TsTypeElement::TsConstructSignatureDecl(node) => prev.constructors.push(node),
+                    TsTypeElement::TsPropertySignature(node) => prev.props.push(node),
+                    TsTypeElement::TsGetterSignature(node) => prev.getters.push(node),
+                    TsTypeElement::TsSetterSignature(node) => prev.setters.push(node),
+                    TsTypeElement::TsMethodSignature(node) => prev.methods.push(node),
+                    TsTypeElement::TsIndexSignature(node) => prev.index_props.push(node),
                 };
                 prev
             });
@@ -55,7 +56,7 @@ pub fn interface_to_token_stream(decl: &TsInterfaceDecl, cm: &SourceMap) -> proc
     //I dont hate myself :D
     let methods: Vec<_> = methods
         .iter()
-        .map(|sig|method_signature_to_impl_item_fn(sig, &cm))
+        .map(|sig| method_signature_to_impl_item_fn(sig, &cm))
         .filter_map(|res| match res {
             Ok(ok) => Some(ok),
             Err(err) => {

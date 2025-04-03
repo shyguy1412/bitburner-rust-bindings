@@ -5,11 +5,15 @@ use swc_ecma_ast::Decl;
 
 mod r#enum;
 pub use r#enum::ts_enum_to_token_stream;
+
 mod interface;
 pub use interface::interface_to_token_stream;
+
 mod r#type;
 pub use r#type::type_alias_to_token_stream;
-mod error;
+
+pub mod error;
+
 mod function;
 
 pub fn declaration_to_struct_token_stream(decl: &Decl, cm: &SourceMap) -> proc_macro::TokenStream {
