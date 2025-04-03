@@ -1,3 +1,4 @@
+use swc_common::SourceMap;
 use swc_ecma_ast::{TsEnumDecl, TsEnumMember};
 
 use super::{parse_quote, safe_convert_ident};
@@ -15,12 +16,12 @@ fn enum_member_to_match_arm(
         .and_then(|expr| expr.lit())
         .and_then(|lit| lit.str())
         .and_then(|lit| Some(lit.value.as_str().to_owned()))
-        .and_then(|str| Some(parse_quote!({#ident::#variant => #str} as syn::Arm => "")));
+        .and_then(|str| parse_quote!({#ident::#variant => #str} as syn::Arm).ok());
     (variant, arm)
 }
 
-pub fn ts_enum_to_token_stream(decl: &TsEnumDecl) -> proc_macro::TokenStream {
-    let ident: syn::Ident = safe_convert_ident(&decl.id).unwrap();
+pub fn ts_enum_to_token_stream(decl: &TsEnumDecl, _cm: &SourceMap) -> proc_macro::TokenStream {
+    let ident: syn::Ident = safe_convert_ident(&decl.id);
     
     let (variants, match_arms): (Vec<syn::Variant>, Vec<Option<syn::Arm>>) = decl
         .members

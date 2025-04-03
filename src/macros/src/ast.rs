@@ -1,13 +1,14 @@
-use swc_common::{FileName, SourceMap, sync::Lrc};
+use swc_common::{FileName, SourceMap};
 use swc_ecma_ast::Module;
 use swc_ecma_parser::{Parser, StringInput, Syntax, error::Error, lexer::Lexer};
 
-pub fn get_ast_for_dts(source: &str) -> Result<Module, Error> {
-    let cm: Lrc<SourceMap> = Default::default(); //the fuck is this?
+pub fn get_ast_for_dts(path: String) -> Result<(Module, SourceMap), Error> {
+    let source = std::fs::read_to_string(&path).expect("Dont be silly. Give me an actual path");
+
+    let cm: SourceMap = Default::default(); //the fuck is this?
 
     //appearently you cant just parse a string, you need a whole ass sourcefile struct
-    let source_file =
-        cm.new_source_file(FileName::Custom(Default::default()).into(), source.into());
+    let source_file = cm.new_source_file(FileName::Custom(path).into(), source.into());
 
     let lexer = Lexer::new(
         // We want to parse ecmascript
@@ -19,5 +20,5 @@ pub fn get_ast_for_dts(source: &str) -> Result<Module, Error> {
     );
     let mut parser = Parser::new_from(lexer);
 
-    parser.parse_typescript_module()
+    parser.parse_typescript_module().map(|module| (module, cm))
 }

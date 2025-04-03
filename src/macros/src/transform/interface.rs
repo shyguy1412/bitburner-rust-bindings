@@ -1,8 +1,9 @@
+use proc_macro_error::emit_error;
+use swc_common::SourceMap;
 use swc_ecma_ast::{
     TsCallSignatureDecl, TsConstructSignatureDecl, TsGetterSignature, TsIndexSignature,
     TsInterfaceDecl, TsMethodSignature, TsPropertySignature, TsSetterSignature, TsTypeElement,
 };
-
 
 use super::function::method_signature_to_impl_item_fn;
 
@@ -30,7 +31,7 @@ impl TypeElements {
     }
 }
 
-pub fn interface_to_token_stream(decl: &TsInterfaceDecl) -> proc_macro::TokenStream {
+pub fn interface_to_token_stream(decl: &TsInterfaceDecl, cm: &SourceMap) -> proc_macro::TokenStream {
     let ident: syn::Ident = syn::parse_str(&format!("{}{}", "", decl.id.sym.as_str())).expect("");
     let TypeElements { methods, .. } =
         decl.body
@@ -54,7 +55,14 @@ pub fn interface_to_token_stream(decl: &TsInterfaceDecl) -> proc_macro::TokenStr
     //I dont hate myself :D
     let methods: Vec<_> = methods
         .iter()
-        .map(method_signature_to_impl_item_fn)
+        .map(|sig|method_signature_to_impl_item_fn(sig, &cm))
+        .filter_map(|res| match res {
+            Ok(ok) => Some(ok),
+            Err(err) => {
+                emit_error!(err);
+                None
+            }
+        })
         .collect::<Vec<syn::ImplItemFn>>()
         .chunk_by(|prev, cur| prev.sig.ident.to_string() == cur.sig.ident.to_string())
         .flat_map(|methods| match methods.len() {
@@ -97,5 +105,6 @@ pub fn interface_to_token_stream(decl: &TsInterfaceDecl) -> proc_macro::TokenStr
         impl #ident {
             #(#methods)*
         }
-    }.into()
+    }
+    .into()
 }

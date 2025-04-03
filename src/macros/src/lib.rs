@@ -1,4 +1,5 @@
 use proc_macro::{Span, TokenStream};
+use proc_macro_error::proc_macro_error;
 use swc_ecma_ast::Decl;
 use syn::parse_macro_input;
 
@@ -48,13 +49,13 @@ pub fn bb_bindgen(_: TokenStream, input: TokenStream) -> TokenStream {
     .into()
 }
 
+#[proc_macro_error]
 #[proc_macro]
 pub fn from_dts(input: TokenStream) -> TokenStream {
     let path = parse_macro_input!(input as syn::LitStr).value();
 
-    let contents = std::fs::read_to_string(path).expect("Dont be silly. Give me an actual path");
 
-    let module = get_ast_for_dts(&contents).expect("fucky typescript??");
+    let (module, cm) = get_ast_for_dts(path).expect("fucky typescript??");
 
     let structs_stream: TokenStream = module
         .body
@@ -69,7 +70,7 @@ pub fn from_dts(input: TokenStream) -> TokenStream {
         .filter_map(|decl| match decl {
             Decl::Using(_) => None,
             Decl::TsModule(_) => None,
-            node => Some(declaration_to_struct_token_stream(&node)),
+            node => Some(declaration_to_struct_token_stream(&node, &cm)),
         })
         .fold(TokenStream::new(), |mut prev, cur| {
             prev.extend(cur);
