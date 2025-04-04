@@ -37,12 +37,12 @@ pub fn binding_ident_to_arg(binding_ident: &BindingIdent, cm: &SourceMap) -> Tra
         .and_then(|type_ann| type_annotation_to_type(&type_ann, cm))
         .unwrap_or(parse_quote!({crate::types::Any} as syn::Type)?);
 
-    let ident = safe_convert_ident(&binding_ident.id);
+    let ident = safe_convert_ident(&binding_ident.id, cm);
     parse_quote!({#ident:#arg_type} as syn::FnArg)
 }
 
 pub fn method_signature_to_impl_item_fn(method: &TsMethodSignature, cm: &SourceMap) -> TransformResult<syn::ImplItemFn> {
-    let ident = method.key.as_ident().map(safe_convert_ident);
+    let ident = method.key.as_ident().map(|ident|safe_convert_ident(ident, cm));
 
     let (args, errors): (Vec<FnArg>, Vec<Error>) = method
         .params

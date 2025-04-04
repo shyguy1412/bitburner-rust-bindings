@@ -12,9 +12,9 @@ use crate::transform::{error::Error, parse_quote};
 
 pub fn type_alias_to_token_stream(
     decl: &TsTypeAliasDecl,
-    _cm: &SourceMap,
+    cm: &SourceMap
 ) -> proc_macro::TokenStream {
-    let ident: syn::Ident = safe_convert_ident(&decl.id);
+    let ident: syn::Ident = safe_convert_ident(&decl.id, cm);
 
     quote::quote! {
       struct #ident{}

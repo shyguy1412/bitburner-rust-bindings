@@ -3,14 +3,28 @@ use proc_macro_error::{Diagnostic, Level};
 use swc_common::{CharPos, SourceMap, Span, Spanned};
 
 #[derive(Debug)]
-pub enum Error {
-    Unsupported(String),
-    Syn(syn::Error),
-    FuckYou(String),
-    TSSyntax(String),
+pub enum ErrorType {
+    Unsupported,
+    Syn,
+    FuckYou,
+    TSSyntax,
+}
+
+#[derive(Debug)]
+pub struct Error {
+    ty: ErrorType,
+    message: String,
 }
 
 impl Error {
+    pub fn ty(&self) -> &ErrorType {
+        return &self.ty;
+    }
+
+    pub fn message(&self) -> &String {
+        return &self.message;
+    }
+
     fn create_message(msg: String, span: Span, cm: &SourceMap) -> String {
         let file_name = cm.span_to_filename(span);
         let source_file = cm.get_source_file(&file_name).unwrap();
@@ -38,33 +52,31 @@ impl Error {
     }
 
     pub fn unsupported(feat: &str, span: Span, cm: &SourceMap) -> Self {
-        Self::Unsupported(Self::create_message(
-            format!("Unsupported feature: {}", feat),
-            span,
-            cm,
-        ))
+        Self {
+            message: Self::create_message(format!("Unsupported feature: {}", feat), span, cm),
+            ty: ErrorType::Unsupported,
+        }
     }
 
     pub fn fuck_you(feat: &str, span: Span, cm: &SourceMap) -> Self {
-        Self::Unsupported(Self::create_message(
-            format!("Fuck You: {}", feat),
-            span,
-            cm,
-        ))
+        Self {
+            message: Self::create_message(format!("Fuck You: {}", feat), span, cm),
+            ty: ErrorType::FuckYou,
+        }
     }
 
     pub fn ts_syntax(err: swc_ecma_parser::error::Error, cm: &SourceMap) -> Self {
-        Self::Unsupported(Self::create_message(
-            format!("TS Syntax Error:"),
-            err.span(),
-            cm,
-        ))
+        Self {
+            message: Self::create_message(format!("TS Syntax Error:"), err.span(), cm),
+            ty: ErrorType::TSSyntax,
+        }
     }
-}
 
-impl From<syn::Error> for Error {
-    fn from(err: syn::Error) -> Self {
-        Self::Syn(err)
+    pub fn syn(err: syn::Error) -> Self {
+        Self {
+            message: format!("SYN:{}", err),
+            ty: ErrorType::Syn,
+        }
     }
 }
 
@@ -74,14 +86,9 @@ impl From<Error> for Diagnostic {
     }
 }
 
-impl Into<String> for Error {
-    fn into(self) -> String {
-        match self {
-            Error::Unsupported(feat) => feat,
-            Error::Syn(error) => error.to_string(),
-            Error::FuckYou(msg) => msg,
-            Error::TSSyntax(msg) => msg,
-        }
+impl From<Error> for String {
+    fn from(value: Error) -> Self {
+        value.message
     }
 }
 

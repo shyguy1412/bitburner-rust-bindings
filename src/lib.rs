@@ -51,13 +51,13 @@ impl NS {
         Ok(().into())
     }
 
-    pub fn toast(&self, message: String, variant: ns::ToastVariant) -> Result<Undefined, JsValue> {
-        let toast: Function = self._ns.get("toast")?;
+    // pub fn toast(&self, message: String, variant: ns::ToastVariant) -> Result<Undefined, JsValue> {
+    //     let toast: Function = self._ns.get("toast")?;
 
-        toast.arg(message.into()).arg(variant.into()).call()?;
+    //     toast.arg(message.into()).arg(variant.into()).call()?;
 
-        Ok(().into())
-    }
+    //     Ok(().into())
+    // }
 }
 
 impl TryFrom<JsValue> for NS {

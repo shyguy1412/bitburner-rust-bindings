@@ -1,5 +1,3 @@
-use error::Error;
-use proc_macro_error::abort;
 use swc_common::SourceMap;
 use swc_ecma_ast::Decl;
 
@@ -28,24 +26,26 @@ pub fn declaration_to_struct_token_stream(decl: &Decl, cm: &SourceMap) -> proc_m
 /**
  * Safely converts TS ident to Rust Ident by prefixing with _ if the ident is a reserved keyword in rust
  */
-pub(self) fn safe_convert_ident(ident: &swc_ecma_ast::Ident) -> syn::Ident {
-    let ident = syn::parse_str::<syn::Ident>(ident.sym.as_str())
-        .or(syn::parse_str::<syn::Ident>(&format!(
-            "_{}",
-            ident.sym.as_str()
-        )))
-        .map_err(Error::from);
+pub(self) fn safe_convert_ident(ident: &swc_ecma_ast::Ident, _cm: &SourceMap) -> syn::Ident {
+    let ident_str = ident.sym.as_str();
+    let result = parse_string!(ident_str => syn::Ident)
+        .or_else(|_| parse_string!(&format!("_{}", ident_str) => syn::Ident));
 
-    if let Err(err) = ident {
-        abort!(err)
-    } else {
-        ident.unwrap()
+    match result {
+        Ok(val) => val,
+        Err(_err) => todo!(),
     }
 }
+macro_rules! parse_string {
+    ($expr:expr => $t:ty) => {
+        syn::parse_str::<$t>($expr).map_err(|e| crate::transform::error::Error::syn(e))
+    };
+}
+pub(crate) use parse_string;
 
 macro_rules! parse_quote {
     ({$($tt:tt)*} as $t:ty) => {
-        syn::parse::<$t>(quote::quote!{$($tt)*}.into()).map_err(super::error::Error::from)
+        syn::parse::<$t>(quote::quote!{$($tt)*}.into()).map_err(|e|crate::transform::error::Error::syn(e))
     };
 }
 pub(crate) use parse_quote;
