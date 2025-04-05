@@ -13,6 +13,8 @@ pub use r#type::type_alias_to_token_stream;
 pub mod error;
 
 mod function;
+mod expression;
+
 
 pub fn declaration_to_struct_token_stream(decl: &Decl, cm: &SourceMap) -> proc_macro::TokenStream {
     match decl {

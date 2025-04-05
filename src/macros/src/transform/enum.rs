@@ -1,15 +1,51 @@
-use proc_macro_error::{abort, emit_call_site_warning};
+use proc_macro_error::abort;
+use proc_macro_error::emit_call_site_warning;
 use swc_common::SourceMap;
 use swc_ecma_ast::{TsEnumDecl, TsEnumMember};
 
-use super::{parse_quote, parse_string, safe_convert_ident};
+use super::{
+    expression::ts_expression_to_expression, parse_quote, parse_string, safe_convert_ident,
+};
 
+/// Converts a TypeScript enum member into a Rust enum variant and an optional match arm.
+///
+/// This function takes an identifier, a TypeScript enum member AST node, and a SourceMap reference.
+/// It returns a tuple containing:
+/// - A `syn::Variant` representing the Rust enum variant.
+/// - An optional `syn::Arm` that matches the enum variant to a string representation.
+///
+/// # Arguments
+///
+/// * `ident` - The identifier for the enum.
+/// * `member` - The TypeScript enum member AST node.
+/// * `_cm` - The SourceMap for the current context (unused in this function).
+///
+/// # Returns
+///
+/// A tuple containing:
+/// - A `syn::Variant` representing the Rust enum variant.
+/// - An optional `syn::Arm` for pattern matching the variant to a string.
+///
+/// # Example
+///
+/// ```rust
+/// use syn::{Ident, Variant, Arm};
+/// use some_ts_parser::{TsEnumMember, SourceMap};
+/// use bitburner_binding_macro::enum_member_to_match_arm;
+///
+/// let ident = Ident::new("MyEnum", Span::call_site());
+/// let member = TsEnumMember::from_string("MyValue");
+/// let cm = SourceMap::new();
+///
+/// let (variant, match_arm) = enum_member_to_match_arm(&ident, &member, &cm);
+///
+/// // Use the returned variant and match arm in further code generation
+/// ```
 fn enum_member_to_match_arm(
     ident: &syn::Ident,
     member: &TsEnumMember,
-    _cm: &SourceMap,
+    cm: &SourceMap,
 ) -> (syn::Variant, Option<syn::Arm>) {
-
     let str_ident = match &member.id {
         swc_ecma_ast::TsEnumMemberId::Ident(ident) => ident.sym.as_str(),
         swc_ecma_ast::TsEnumMemberId::Str(str) => str.value.as_str(),
@@ -20,16 +56,12 @@ fn enum_member_to_match_arm(
         Err(err) => abort!(err),
     };
 
-    let arm = member
-        .init
-        .as_ref()
-        .and_then(|expr| expr.as_lit())
-        .and_then(|lit| lit.as_str())
-        .and_then(|lit| Some(lit.value.as_str()))
-        .and_then(|str| parse_quote!({#ident::#variant => #str} as syn::Arm).ok());
-
-    arm.is_none()
-        .then(|| emit_call_site_warning!("That type of enum is not implemented"));
+    let arm = member.init.as_ref().map(Box::as_ref).and_then(|expr| {
+        ts_expression_to_expression(expr, cm)
+            .and_then(|expr| parse_quote!({#ident::#variant => #expr} as syn::Arm))
+            .inspect_err(|e| emit_call_site_warning!(e))
+            .ok()
+    });
 
     (variant, arm)
 }
@@ -53,20 +85,23 @@ pub fn ts_enum_to_token_stream(decl: &TsEnumDecl, cm: &SourceMap) -> proc_macro:
 
     if let Some(match_arms) = match_arms {
         declaration.extend(quote::quote! {
-          impl #ident {
-            fn as_string(&self) -> &str {
-                match self {
-                    #(#match_arms),*,
-                    _ => panic!("This variant can not be converted to a string"),
+            impl #ident {
+                fn as_any(&self) -> crate::types::Any {
+                    match self {
+                        #(#match_arms),*,
+                        _ => panic!("This variant can not be converted to a string"),
+                    }
+                }
+              }
+
+            impl From<#ident> for crate::types::Any{
+                fn from(value:#ident) -> crate::types::Any {
+                    match value {
+                        #(#match_arms),*,
+                        _ => panic!("This variant can not be converted to a string"),
+                    }
                 }
             }
-          }
-
-          impl Into<crate::types::Any> for #ident{
-            fn into(self) -> crate::types::Any {
-                Into::<crate::types::String>::into(self.as_string()).into()
-            }
-          }
         });
     }
 

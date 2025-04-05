@@ -80,9 +80,21 @@ impl Error {
     }
 }
 
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
 impl From<Error> for Diagnostic {
     fn from(value: Error) -> Self {
         Diagnostic::new(Level::Error, value.into())
+    }
+}
+
+impl From<&Error> for Diagnostic {
+    fn from(value: &Error) -> Self {
+        Diagnostic::new(Level::Error, value.message.clone())
     }
 }
 
@@ -91,5 +103,12 @@ impl From<Error> for String {
         value.message
     }
 }
+
+impl From<&Error> for String {
+    fn from(value: &Error) -> Self {
+        value.message.clone()
+    }
+}
+
 
 pub type TransformResult<T> = std::result::Result<T, Error>;
