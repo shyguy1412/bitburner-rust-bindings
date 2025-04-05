@@ -1,9 +1,9 @@
 use super::*;
+use std::cell::RefCell;
+use std::rc::Rc;
 use wasm_bindgen::convert::{FromWasmAbi, IntoWasmAbi};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::{JsError, JsValue};
-use std::cell::RefCell;
-use std::rc::Rc;
 
 /** This struct represents any possible JS value */
 pub struct Any {
@@ -52,12 +52,11 @@ impl FromWasmAbi for Any {
 //This lets JS functions bound to rust take Any as parameter
 impl IntoWasmAbi for Any {
     type Abi = u32;
-    
+
     fn into_abi(self) -> Self::Abi {
         self.value.into_abi()
     }
 }
-
 
 impl From<JsValue> for Any {
     fn from(value: JsValue) -> Self {
@@ -85,22 +84,22 @@ impl std::ops::Deref for Any {
  */
 macro_rules! try_into {
   ($(($t:ident, $ts:literal) => $m:literal)*) => ($(
-    impl TryInto<$t> for Any {
+    impl TryFrom<Any> for $t {
         type Error = JsValue;
 
-        fn try_into(self) -> Result<$t, Self::Error> {
+        fn try_from(any: Any) -> Result<$t, Self::Error> {
 
-            if self.js_typeof() != $ts {
+            if any.js_typeof() != $ts {
                 return Err(JsError::new(
                     format!(
                         $m,
-                        self.value.js_typeof().as_string().unwrap()
+                        any.value.js_typeof().as_string().unwrap()
                     )
                     .as_str(),
                 ).into());
             };
 
-            return Ok($t::new(self.value.into(), self.context));
+            return Ok($t::new(any.value.into(), any.context));
         }
     }
   )*)
@@ -188,5 +187,11 @@ impl Future for Any {
             }
             None => panic!("wtf?"),
         }
+    }
+}
+
+impl From<&str> for Any {
+    fn from(value: &str) -> Self {
+        value.into()
     }
 }

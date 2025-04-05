@@ -7,7 +7,7 @@ use syn::parse_macro_input;
 mod transform;
 use transform::{declaration_to_struct_token_stream, error::Error};
 
-//This wraps the main function with some casting and memory management
+/// Use this to expose your function to bitburner 
 #[proc_macro_attribute]
 pub fn bb_bindgen(_: TokenStream, input: TokenStream) -> TokenStream {
     let mut body = parse_macro_input!(input as syn::ItemFn);
@@ -48,6 +48,13 @@ pub fn bb_bindgen(_: TokenStream, input: TokenStream) -> TokenStream {
     .into()
 }
 
+/// Generates WASM glue for an API defined with a d.ts file
+/// # Example
+/// ```
+/// use bitburner_bindings_macros::from_dts;
+/// 
+/// from_dts!("./path/to/api.d.ts")
+/// ```
 #[proc_macro_error]
 #[proc_macro]
 pub fn from_dts(input: TokenStream) -> TokenStream {

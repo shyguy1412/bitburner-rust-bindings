@@ -31,7 +31,8 @@ macro_rules! impl_get {
 macro_rules! magic {
   ($(($type:ident, $type_str:literal) => $error:literal)*) => ($(
 
-    //This creates the struct for string, number, etc...
+    #[doc = "Simple wrapper for a JS"]
+    #[doc = $type_str]
     pub struct $type{
       pub(super) value: wasm_bindgen::JsValue,
       pub(super) context: wasm_bindgen::JsValue
@@ -47,9 +48,9 @@ macro_rules! magic {
     }
 
     //Cast any type into Any
-    impl Into<Any> for $type {
-      fn into(self) -> Any {
-        Any::new(self.value.into(), self.context)
+    impl From<$type> for Any {
+      fn from(value:$type) -> Any {
+        Any::new(value.value.into(), value.context)
       }
     }
 
@@ -75,11 +76,11 @@ macro_rules! magic {
 
     impl wasm_bindgen::convert::IntoWasmAbi for $type {
         type Abi = u32;
-        
+
         fn into_abi(self) -> Self::Abi {
             self.value.into_abi()
         }
-    
+
     }
 
     //Any implements future so any type can be awaited if its cast to Any first
@@ -109,7 +110,7 @@ macro_rules! magic {
     //Constantly typing $type::new(value, JsValue::undefined()) sucks
     //The only reason context exists is functions anyway
     //literally the only reason other values also have it is to make macros easier
-    //also context shouldnt get lost if you do fucky casting ig 
+    //also context shouldnt get lost if you do fucky casting ig
     impl From<JsValue> for $type {
        fn from(val:JsValue) -> $type {
           $type::new(val, JsValue::undefined())
@@ -191,7 +192,6 @@ impl Function {
 
     //workaround for variadic function
     pub fn arg(&self, arg: Any) -> Self {
-
         //this binding is insane. this doesnt even work
         //but nothing broke yet sooooooooo idc
         let context = if self.is_bound() {
@@ -224,35 +224,35 @@ impl Function {
     }
 }
 
-impl Into<Number> for f64 {
-    fn into(self) -> Number {
+impl From<f64> for Number {
+    fn from(v: f64) -> Self {
         Number {
-            value: JsValue::from(self),
+            value: JsValue::from(v),
             context: JsValue::undefined(),
         }
     }
 }
 
-impl Into<String> for &str {
-    fn into(self) -> String {
+impl From<&str> for String {
+    fn from(str: &str) -> Self {
         String {
-            value: JsValue::from(self),
+            value: JsValue::from(str),
             context: JsValue::undefined(),
         }
     }
 }
 
-impl Into<String> for std::string::String {
-    fn into(self) -> String {
+impl From<std::string::String> for String {
+    fn from(v: std::string::String) -> Self {
         String {
-            value: JsValue::from(self),
+            value: JsValue::from(v),
             context: JsValue::undefined(),
         }
     }
 }
 
-impl Into<Undefined> for () {
-    fn into(self) -> Undefined {
+impl From<()> for Undefined {
+    fn from(_: ()) -> Self {
         Undefined {
             value: JsValue::undefined(),
             context: JsValue::undefined(),

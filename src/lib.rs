@@ -1,9 +1,7 @@
-use bitburner_bindings_macros::from_dts;
-
 mod types;
 pub use types::*;
 
-pub use bitburner_bindings_macros::bb_bindgen;
+pub use bitburner_bindings_macros::{bb_bindgen, from_dts};
 use wasm_bindgen::JsValue;
 
 pub fn v4uuid() -> String {
@@ -51,13 +49,13 @@ impl NS {
         Ok(().into())
     }
 
-    // pub fn toast(&self, message: String, variant: ns::ToastVariant) -> Result<Undefined, JsValue> {
-    //     let toast: Function = self._ns.get("toast")?;
+    pub fn toast(&self, message: String, variant: ns::ToastVariant) -> Result<Undefined, JsValue> {
+        let toast: Function = self._ns.get("toast")?;
 
-    //     toast.arg(message.into()).arg(variant.into()).call()?;
+        toast.arg(message.into()).arg(variant.into()).call()?;
 
-    //     Ok(().into())
-    // }
+        Ok(().into())
+    }
 }
 
 impl TryFrom<JsValue> for NS {
@@ -73,6 +71,11 @@ impl TryFrom<JsValue> for NS {
 }
 
 pub mod ns {
+    use super::*;
     // crate::from_dts!("./Type.d.ts");
-    crate::from_dts!("./NetscriptDefinitions.d.ts");
+    from_dts!("./NetscriptDefinitions.d.ts");
+
+    fn test() -> Any {
+        LocationName::AevumAeroCorp.into()
+    }
 }
