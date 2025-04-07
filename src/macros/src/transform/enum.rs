@@ -86,7 +86,7 @@ pub fn ts_enum_to_token_stream(decl: &TsEnumDecl, cm: &SourceMap) -> proc_macro:
     if let Some(match_arms) = match_arms {
         declaration.extend(quote::quote! {
             impl #ident {
-                fn as_any(&self) -> crate::types::Any {
+                fn as_any(&self) -> crate::Any {
                     match self {
                         #(#match_arms),*,
                         _ => panic!("This variant can not be converted to a string"),
@@ -94,8 +94,8 @@ pub fn ts_enum_to_token_stream(decl: &TsEnumDecl, cm: &SourceMap) -> proc_macro:
                 }
               }
 
-            impl From<#ident> for crate::types::Any{
-                fn from(value:#ident) -> crate::types::Any {
+            impl From<#ident> for crate::Any{
+                fn from(value:#ident) -> crate::Any {
                     match value {
                         #(#match_arms),*,
                         _ => panic!("This variant can not be converted to a string"),

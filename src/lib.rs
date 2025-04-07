@@ -74,8 +74,4 @@ pub mod ns {
     use super::*;
     // crate::from_dts!("./Type.d.ts");
     from_dts!("./NetscriptDefinitions.d.ts");
-
-    fn test() -> Any {
-        LocationName::AevumAeroCorp.into()
-    }
 }

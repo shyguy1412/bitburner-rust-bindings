@@ -3,7 +3,8 @@ use swc_common::{SourceMap, Spanned};
 use swc_ecma_ast::{Expr, Lit, MemberExpr, Str};
 
 use super::{
-    error::{Error, TransformResult}, parse_quote, parse_string, safe_convert_ident
+    error::{Error, TransformResult},
+    parse_quote, parse_string, safe_convert_ident,
 };
 
 pub fn ts_expression_to_expression(expr: &Expr, cm: &SourceMap) -> TransformResult<syn::Expr> {
@@ -12,7 +13,7 @@ pub fn ts_expression_to_expression(expr: &Expr, cm: &SourceMap) -> TransformResu
         Expr::Member(member) => member_to_any_expression(member, cm),
         Expr::Ident(ident) => {
             let ident = safe_convert_ident(ident, cm);
-            parse_quote!({#ident} as syn::Expr).inspect_err(|err| {
+            parse_quote!({#ident} as syn::Expr).inspect_err(|_| {
                 emit_error!(Error::fuck_you(&ident.to_string(), expr.span(), cm))
             })
         }
@@ -53,8 +54,6 @@ pub fn member_to_any_expression(member: &MemberExpr, cm: &SourceMap) -> Transfor
             member.span,
             cm,
         ))?;
-
-    
 
     parse_quote!({ #expr::#ident.into() } as syn::Expr).inspect_err(|err| emit_error!(err))
 }

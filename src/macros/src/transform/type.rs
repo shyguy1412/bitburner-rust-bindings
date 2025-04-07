@@ -1,4 +1,3 @@
-use proc_macro_error::emit_error;
 use swc_common::SourceMap;
 use swc_ecma_ast::{
     TsArrayType, TsConditionalType, TsFnOrConstructorType, TsImportType, TsIndexedAccessType,
@@ -12,7 +11,7 @@ use crate::transform::{error::Error, parse_quote};
 
 pub fn type_alias_to_token_stream(
     decl: &TsTypeAliasDecl,
-    cm: &SourceMap
+    cm: &SourceMap,
 ) -> proc_macro::TokenStream {
     let ident: syn::Ident = safe_convert_ident(&decl.id, cm);
 
@@ -22,8 +21,8 @@ pub fn type_alias_to_token_stream(
     .into()
 }
 
-pub fn type_annotation_to_type(ann: &TsTypeAnn, cm: &SourceMap) -> Option<syn::Type> {
-    let result = match &*ann.type_ann {
+pub fn type_annotation_to_type(ann: &TsTypeAnn, cm: &SourceMap) -> TransformResult<syn::Type> {
+    match &*ann.type_ann {
         TsType::TsKeywordType(node) => keyword_type_to_type(node, cm),
         TsType::TsThisType(node) => this_type_to_type(node, cm),
         TsType::TsFnOrConstructorType(node) => fn_or_constructor_type_to_type(node, cm),
@@ -44,112 +43,104 @@ pub fn type_annotation_to_type(ann: &TsTypeAnn, cm: &SourceMap) -> Option<syn::T
         TsType::TsLitType(node) => lit_type_to_type(node, cm),
         TsType::TsTypePredicate(node) => type_predicate_to_type(node, cm),
         TsType::TsImportType(node) => import_type_to_type(node, cm),
-    };
-
-    match result {
-        Ok(ty) => Some(ty),
-        Err(err) => {
-            emit_error!(err);
-            None
-        }
     }
 }
 
 pub fn keyword_type_to_type(_ty: &TsKeywordType, _cm: &SourceMap) -> TransformResult<syn::Type> {
-    parse_quote!({ crate::types::Any } as syn::Type)
+    parse_quote!({ crate::Any } as syn::Type)
 }
 
 pub fn this_type_to_type(_ty: &TsThisType, _cm: &SourceMap) -> TransformResult<syn::Type> {
-    parse_quote!({ crate::types::Any } as syn::Type)
+    parse_quote!({ crate::Any } as syn::Type)
 }
 
 pub fn fn_or_constructor_type_to_type(
     _ty: &TsFnOrConstructorType,
     _cm: &SourceMap,
 ) -> TransformResult<syn::Type> {
-    parse_quote!({ crate::types::Any } as syn::Type)
+    parse_quote!({ crate::Any } as syn::Type)
 }
 
 pub fn type_ref_to_type(_ty: &TsTypeRef, _cm: &SourceMap) -> TransformResult<syn::Type> {
-    parse_quote!({ crate::types::Any } as syn::Type)
+    parse_quote!({ crate::Any } as syn::Type)
 }
 
 pub fn type_query_to_type(_ty: &TsTypeQuery, _cm: &SourceMap) -> TransformResult<syn::Type> {
-    parse_quote!({ crate::types::Any } as syn::Type)
+    parse_quote!({ crate::Any } as syn::Type)
 }
 
 pub fn type_lit_to_type(_ty: &TsTypeLit, _cm: &SourceMap) -> TransformResult<syn::Type> {
-    parse_quote!({ crate::types::Any } as syn::Type)
+    parse_quote!({ crate::Any } as syn::Type)
 }
 
 pub fn array_type_to_type(_ty: &TsArrayType, _cm: &SourceMap) -> TransformResult<syn::Type> {
-    parse_quote!({ crate::types::Any } as syn::Type)
+    parse_quote!({ crate::Any } as syn::Type)
 }
 
 pub fn tuple_type_to_type(_ty: &TsTupleType, _cm: &SourceMap) -> TransformResult<syn::Type> {
-    parse_quote!({ crate::types::Any } as syn::Type)
+    parse_quote!({ crate::Any } as syn::Type)
 }
 
 pub fn optional_type_to_type(_ty: &TsOptionalType, _cm: &SourceMap) -> TransformResult<syn::Type> {
-    parse_quote!({ crate::types::Any } as syn::Type)
+    parse_quote!({ crate::Any } as syn::Type)
 }
 
 pub fn rest_type_to_type(_ty: &TsRestType, _cm: &SourceMap) -> TransformResult<syn::Type> {
-    parse_quote!({ crate::types::Any } as syn::Type)
+    parse_quote!({ crate::Any } as syn::Type)
 }
 
 pub fn union_or_intersection_type_to_type(
     _ty: &TsUnionOrIntersectionType,
     _cm: &SourceMap,
 ) -> TransformResult<syn::Type> {
-    parse_quote!({ crate::types::Any } as syn::Type)
+    parse_quote!({ crate::Any } as syn::Type)
 }
 
 pub fn conditional_type_to_type(
     _ty: &TsConditionalType,
     _cm: &SourceMap,
 ) -> TransformResult<syn::Type> {
-    parse_quote!({ crate::types::Any } as syn::Type)
+    parse_quote!({ crate::Any } as syn::Type)
 }
 
 pub fn infer_type_to_type(_ty: &TsInferType, _cm: &SourceMap) -> TransformResult<syn::Type> {
-    parse_quote!({ crate::types::Any } as syn::Type)
+    parse_quote!({ crate::Any } as syn::Type)
 }
 
 pub fn parenthesized_type_to_type(
     _ty: &TsParenthesizedType,
     _cm: &SourceMap,
 ) -> TransformResult<syn::Type> {
-    parse_quote!({ crate::types::Any } as syn::Type)
+    parse_quote!({ crate::Any } as syn::Type)
 }
 
 pub fn type_operator_to_type(_ty: &TsTypeOperator, _cm: &SourceMap) -> TransformResult<syn::Type> {
-    parse_quote!({ crate::types::Any } as syn::Type)
+    parse_quote!({ crate::Any } as syn::Type)
 }
 
 pub fn indexed_access_type_to_type(
     _ty: &TsIndexedAccessType,
     _cm: &SourceMap,
 ) -> TransformResult<syn::Type> {
-    parse_quote!({ crate::types::Any } as syn::Type)
+    parse_quote!({ crate::Any } as syn::Type)
 }
 
 pub fn mapped_type_to_type(_ty: &TsMappedType, _cm: &SourceMap) -> TransformResult<syn::Type> {
-    parse_quote!({ crate::types::Any } as syn::Type)
+    parse_quote!({ crate::Any } as syn::Type)
 }
 
 pub fn lit_type_to_type(_ty: &TsLitType, _cm: &SourceMap) -> TransformResult<syn::Type> {
-    parse_quote!({ crate::types::Any } as syn::Type)
+    parse_quote!({ crate::Any } as syn::Type)
 }
 
 pub fn type_predicate_to_type(
     _ty: &TsTypePredicate,
     _cm: &SourceMap,
 ) -> TransformResult<syn::Type> {
-    parse_quote!({ crate::types::Any } as syn::Type)
+    parse_quote!({ crate::Any } as syn::Type)
 }
 
 pub fn import_type_to_type(ty: &TsImportType, cm: &SourceMap) -> TransformResult<syn::Type> {
     Err(Error::unsupported("Import Type", ty.span, cm))
-    // parse_quote!({crate::types::Any} as syn::Type)
+    // parse_quote!({crate::Any} as syn::Type)
 }

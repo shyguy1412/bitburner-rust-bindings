@@ -1,8 +1,7 @@
 use itertools::Itertools;
-use proc_macro_error::emit_error;
+use proc_macro_error::{emit_call_site_warning, emit_error};
 use swc_common::SourceMap;
 use swc_ecma_ast::{ArrayPat, BindingIdent, ObjectPat, RestPat, TsFnParam, TsMethodSignature};
-use syn::FnArg;
 
 use crate::transform::{parse_quote, safe_convert_ident, r#type::type_annotation_to_type};
 
@@ -23,38 +22,75 @@ pub fn array_arg_to_arg(arg: &ArrayPat, cm: &SourceMap) -> TransformResult<syn::
 pub fn rest_arg_to_arg(arg: &RestPat, cm: &SourceMap) -> TransformResult<syn::FnArg> {
     match arg.arg.as_ref() {
         swc_ecma_ast::Pat::Ident(node) => binding_ident_to_arg(node, &cm),
-        _ => Err(Error::fuck_you("This shouldnt even be valid syntax?", arg.span, cm)),
+        _ => Err(Error::fuck_you(
+            "This shouldnt even be valid syntax?",
+            arg.span,
+            cm,
+        )),
     }
 }
 pub fn object_arg_to_arg(arg: &ObjectPat, cm: &SourceMap) -> TransformResult<syn::FnArg> {
     Err(Error::unsupported("object argument", arg.span, cm))
 }
 
-pub fn binding_ident_to_arg(binding_ident: &BindingIdent, cm: &SourceMap) -> TransformResult<syn::FnArg> {
+pub fn binding_ident_to_arg(
+    binding_ident: &BindingIdent,
+    cm: &SourceMap,
+) -> TransformResult<syn::FnArg> {
     let arg_type = binding_ident
         .type_ann
         .as_ref()
-        .and_then(|type_ann| type_annotation_to_type(&type_ann, cm))
-        .unwrap_or(parse_quote!({crate::types::Any} as syn::Type)?);
+        .map(|type_ann| type_annotation_to_type(&type_ann, cm))
+        .transpose()
+        .inspect_err(|err| emit_call_site_warning!(err))
+        .ok()
+        .flatten()
+        .unwrap_or(
+            parse_quote!({ dyn From<crate::Any> } as syn::Type)
+                .expect("Guranteed by argument"),
+        );
 
     let ident = safe_convert_ident(&binding_ident.id, cm);
     parse_quote!({#ident:#arg_type} as syn::FnArg)
 }
 
-pub fn method_signature_to_impl_item_fn(method: &TsMethodSignature, cm: &SourceMap) -> TransformResult<syn::ImplItemFn> {
-    let ident = method.key.as_ident().map(|ident|safe_convert_ident(ident, cm));
+pub fn method_signature_to_impl_item_fn(
+    method: &TsMethodSignature,
+    cm: &SourceMap,
+) -> TransformResult<syn::ImplItemFn> {
+    let ident = method
+        .key
+        .as_ident()
+        .map(|ident| safe_convert_ident(ident, cm));
 
-    let (args, errors): (Vec<FnArg>, Vec<Error>) = method
+    let (args, errors): (Vec<(syn::FnArg, syn::GenericParam)>, Vec<Error>) = method
         .params
         .iter()
-        .map(|param|ts_fn_param_to_arg(param, cm))
+        .map(|param| ts_fn_param_to_arg(param, cm))
+        .filter_map_ok(|arg| match arg {
+            syn::FnArg::Receiver(_) => None,
+            syn::FnArg::Typed(arg) => Some((*arg.pat, *arg.ty)),
+        })
         .partition_result();
 
     if errors.len() != 0 {
         errors.into_iter().for_each(|e| emit_error!(e));
     }
 
+    let return_type = method
+        .type_ann
+        .as_ref()
+        .map(|ann| ann.as_ref())
+        .map(|ann| type_annotation_to_type(ann, cm))
+        .transpose()
+        .inspect_err(|err| emit_call_site_warning!(err))
+        .ok()
+        .flatten()
+        .unwrap_or(parse_quote!({ () } as syn::Type).expect("Guranteed by Argument"));
+
     parse_quote!({
-        pub fn #ident(&self, #(#args),*){} 
+        pub fn #ident<#(#generics),*>(&self, #(#args),*) -> #return_type {
+            ().into()
+        } 
     } as syn::ImplItemFn)
 }

@@ -110,5 +110,4 @@ impl From<&Error> for String {
     }
 }
 
-
 pub type TransformResult<T> = std::result::Result<T, Error>;
