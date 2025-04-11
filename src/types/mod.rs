@@ -34,8 +34,8 @@ macro_rules! magic {
     #[doc = "Simple wrapper for a JS"]
     #[doc = $type_str]
     pub struct $type{
-      pub(super) value: wasm_bindgen::JsValue,
-      pub(super) context: wasm_bindgen::JsValue
+      pub(crate) value: wasm_bindgen::JsValue,
+      pub(crate) context: wasm_bindgen::JsValue
     }
 
     //So you can get a ref to the internal JsValue

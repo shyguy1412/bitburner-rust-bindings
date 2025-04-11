@@ -1,3 +1,4 @@
+use proc_macro_error::abort;
 use swc_common::SourceMap;
 use swc_ecma_ast::Decl;
 
@@ -34,7 +35,7 @@ pub(self) fn safe_convert_ident(ident: &swc_ecma_ast::Ident, _cm: &SourceMap) ->
 
     match result {
         Ok(val) => val,
-        Err(_err) => todo!(),
+        Err(err) => abort!(err),
     }
 }
 macro_rules! parse_string {

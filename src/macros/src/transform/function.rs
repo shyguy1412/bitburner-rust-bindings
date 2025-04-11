@@ -3,7 +3,9 @@ use proc_macro_error::{emit_call_site_warning, emit_error};
 use swc_common::SourceMap;
 use swc_ecma_ast::{ArrayPat, BindingIdent, ObjectPat, RestPat, TsFnParam, TsMethodSignature};
 
-use crate::transform::{parse_quote, safe_convert_ident, r#type::type_annotation_to_type};
+use crate::transform::{
+    parse_quote, parse_string, safe_convert_ident, r#type::type_annotation_to_type,
+};
 
 use super::error::{Error, TransformResult};
 
@@ -45,10 +47,7 @@ pub fn binding_ident_to_arg(
         .inspect_err(|err| emit_call_site_warning!(err))
         .ok()
         .flatten()
-        .unwrap_or(
-            parse_quote!({ dyn From<crate::Any> } as syn::Type)
-                .expect("Guranteed by argument"),
-        );
+        .unwrap_or(parse_quote!({ crate::Any } as syn::Type).expect("Guranteed by argument"));
 
     let ident = safe_convert_ident(&binding_ident.id, cm);
     parse_quote!({#ident:#arg_type} as syn::FnArg)
@@ -61,9 +60,13 @@ pub fn method_signature_to_impl_item_fn(
     let ident = method
         .key
         .as_ident()
-        .map(|ident| safe_convert_ident(ident, cm));
+        .map(|ident| safe_convert_ident(ident, cm))
+        .ok_or(Error::unsupported("Computed method name", method.span, cm))?;
 
-    let (args, errors): (Vec<(syn::FnArg, syn::GenericParam)>, Vec<Error>) = method
+    let ident_str =
+        parse_string!(&format!("\"{}\"", ident) => syn::LitStr).expect("Guranteed by arguments");
+
+    let (args, errors): (Vec<_>, Vec<Error>) = method
         .params
         .iter()
         .map(|param| ts_fn_param_to_arg(param, cm))
@@ -77,6 +80,8 @@ pub fn method_signature_to_impl_item_fn(
         errors.into_iter().for_each(|e| emit_error!(e));
     }
 
+    let (arg_idents, arg_types): (Vec<_>, Vec<_>) = args.into_iter().unzip();
+
     let return_type = method
         .type_ann
         .as_ref()
@@ -89,8 +94,14 @@ pub fn method_signature_to_impl_item_fn(
         .unwrap_or(parse_quote!({ () } as syn::Type).expect("Guranteed by Argument"));
 
     parse_quote!({
-        pub fn #ident<#(#generics),*>(&self, #(#args),*) -> #return_type {
-            ().into()
+        pub fn #ident(&self, #(#arg_idents:#arg_types),*) -> Result<#return_type, wasm_bindgen::JsValue> {
+            let #ident: crate::Function = self.internal.get(#ident_str)?;
+
+            let result = #ident #(.arg(#arg_idents.into()))*.call()?;
+
+            result
+                .try_into()
+                .map_err(|err| Into::<crate::Any>::into(err).value)
         } 
     } as syn::ImplItemFn)
 }

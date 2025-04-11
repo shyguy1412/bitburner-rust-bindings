@@ -101,7 +101,7 @@ pub fn interface_to_token_stream(
 
     quote::quote! {
         pub struct #ident{
-            _self: crate::Object
+            internal: crate::Object
         }
         impl #ident {
             #(#methods)*

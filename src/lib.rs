@@ -1,4 +1,5 @@
 mod types;
+
 pub use types::*;
 
 pub use bitburner_bindings_macros::{bb_bindgen, from_dts};
@@ -12,6 +13,8 @@ pub fn v4uuid() -> String {
         .to_owned();
     my_uuid.into()
 }
+
+// pub use ns::NS;
 
 pub struct NS {
     _ns: Object,
@@ -49,12 +52,14 @@ impl NS {
         Ok(().into())
     }
 
-    pub fn toast(&self, message: String, variant: ns::ToastVariant) -> Result<Undefined, JsValue> {
+    pub fn toast(&self, message: String, variant: ns::ToastVariant, _:Undefined) -> Result<crate::Any, JsValue> {
         let toast: Function = self._ns.get("toast")?;
 
-        toast.arg(message.into()).arg(variant.into()).call()?;
+        let result = toast.arg(message.into()).arg(variant.into()).call()?;
 
-        Ok(().into())
+        result
+            .try_into()
+            .map_err(|err| Into::<crate::Any>::into(err).value)
     }
 }
 

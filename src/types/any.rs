@@ -7,8 +7,8 @@ use wasm_bindgen::{JsError, JsValue};
 
 /** This struct represents any possible JS value */
 pub struct Any {
-    pub(super) value: JsValue,
-    pub(super) context: JsValue,
+    pub(crate) value: JsValue,
+    pub(crate) context: JsValue,
     inner: Option<Rc<RefCell<Inner>>>,
 }
 
@@ -67,6 +67,12 @@ impl From<JsValue> for Any {
 impl From<()> for Any {
     fn from(_: ()) -> Self {
         Any::new(JsValue::undefined(), JsValue::undefined())
+    }
+}
+
+impl From<std::convert::Infallible> for crate::Any {
+    fn from(_: std::convert::Infallible) -> Self {
+        ().into()
     }
 }
 
