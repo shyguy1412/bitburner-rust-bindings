@@ -172,26 +172,21 @@ macro_rules! js_closure {
 
 impl Function {
     pub fn from(value: Box<dyn Fn(js_sys::Array) -> JsValue>) -> Self {
+        let js_wrapper = js_sys::Function::new_with_args("fn", "return (...args) => fn(args)");
         //this is evil
         //in order to have variadic functions I need to collect all args into one array and pass that instead
-        let js_wrapper =
-            js_sys::Function::new_with_args("fn", "return (...args) => () => fn(args)");
-        let js_wrapper = Function::new(js_wrapper.into(), JsValue::undefined());
 
-        let closure = wasm_bindgen::closure::Closure::wrap(value);
-        let closure = Any::new(closure.into_js_value().into(), JsValue::undefined());
-
+        let closure = wasm_bindgen::closure::Closure::wrap(value).into_js_value();
         //This wraps the wasm closure in the argument collector wrapper
         let closure = js_wrapper
-            .arg(closure)
-            .call()
+            .call1(&JsValue::undefined(), &closure)
             .expect("If this throws black magic fuckery happened");
 
-        Function::new(closure.unwrap(), JsValue::undefined())
+        Function::new(closure, JsValue::undefined())
     }
 
     //workaround for variadic function
-    pub fn arg(&self, arg: Any) -> Self {
+    pub fn arg(self, arg: Any) -> Self {
         //this binding is insane. this doesnt even work
         //but nothing broke yet sooooooooo idc
         let context = if self.is_bound() {
@@ -200,15 +195,14 @@ impl Function {
             self.context.clone()
         };
 
-        let this: js_sys::Function = self.value.clone().into();
-
+        let this: js_sys::Function = self.value.into();
         Self {
             value: this.bind1(&context, &arg.value).into(),
             context,
         }
     }
 
-    pub fn call(self) -> Result<Any, wasm_bindgen::JsValue> {
+    pub fn call(&self) -> Result<Any, wasm_bindgen::JsValue> {
         let this: js_sys::Function = self.value.clone().into();
 
         match this.call0(&self.context) {
