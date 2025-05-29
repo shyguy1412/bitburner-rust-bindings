@@ -1,9 +1,9 @@
 use swc_common::SourceMap;
 use swc_ecma_ast::{
     TsArrayType, TsConditionalType, TsFnOrConstructorType, TsImportType, TsIndexedAccessType,
-    TsInferType, TsKeywordType, TsLitType, TsMappedType, TsOptionalType, TsParenthesizedType,
-    TsRestType, TsThisType, TsTupleType, TsType, TsTypeAliasDecl, TsTypeAnn, TsTypeLit,
-    TsTypeOperator, TsTypePredicate, TsTypeQuery, TsTypeRef, TsUnionOrIntersectionType,
+    TsInferType, TsKeywordType, TsKeywordTypeKind, TsLit, TsLitType, TsMappedType, TsOptionalType,
+    TsParenthesizedType, TsRestType, TsThisType, TsTupleType, TsType, TsTypeAliasDecl, TsTypeAnn,
+    TsTypeLit, TsTypeOperator, TsTypePredicate, TsTypeQuery, TsTypeRef, TsUnionOrIntersectionType,
 };
 
 use super::{error::TransformResult, safe_convert_ident};
@@ -46,8 +46,26 @@ pub fn type_annotation_to_type(ann: &TsTypeAnn, cm: &SourceMap) -> TransformResu
     }
 }
 
-pub fn keyword_type_to_type(_ty: &TsKeywordType, _cm: &SourceMap) -> TransformResult<syn::Type> {
-    parse_quote!({ crate::Any } as syn::Type)
+pub fn keyword_type_to_type(ty: &TsKeywordType, cm: &SourceMap) -> TransformResult<syn::Type> {
+    let ty = match &ty.kind {
+        TsKeywordTypeKind::TsAnyKeyword => parse_quote!({ crate::Any } as syn::Type),
+        TsKeywordTypeKind::TsUnknownKeyword => parse_quote!({ crate::Any } as syn::Type),
+        TsKeywordTypeKind::TsNumberKeyword => parse_quote!({ crate::Number } as syn::Type),
+        TsKeywordTypeKind::TsObjectKeyword => parse_quote!({ crate::Object } as syn::Type),
+        TsKeywordTypeKind::TsBooleanKeyword => parse_quote!({ crate::Boolean } as syn::Type),
+        TsKeywordTypeKind::TsBigIntKeyword => parse_quote!({ crate::BigInt } as syn::Type),
+        TsKeywordTypeKind::TsStringKeyword => parse_quote!({ crate::String } as syn::Type),
+        TsKeywordTypeKind::TsSymbolKeyword => parse_quote!({ crate::Symbol } as syn::Type),
+        TsKeywordTypeKind::TsVoidKeyword => parse_quote!({ crate::Undefined } as syn::Type),
+        TsKeywordTypeKind::TsUndefinedKeyword => parse_quote!({ crate::Undefined } as syn::Type),
+        TsKeywordTypeKind::TsNullKeyword => parse_quote!({ crate::Object } as syn::Type),
+        TsKeywordTypeKind::TsNeverKeyword => parse_quote!({ crate::Undefined } as syn::Type),
+        TsKeywordTypeKind::TsIntrinsicKeyword => {
+            Err(Error::unsupported("Intrinsic keyword type", ty.span, cm))
+        }
+    }?;
+    
+    Ok(ty)
 }
 
 pub fn this_type_to_type(_ty: &TsThisType, _cm: &SourceMap) -> TransformResult<syn::Type> {
@@ -129,8 +147,16 @@ pub fn mapped_type_to_type(_ty: &TsMappedType, _cm: &SourceMap) -> TransformResu
     parse_quote!({ crate::Any } as syn::Type)
 }
 
-pub fn lit_type_to_type(_ty: &TsLitType, _cm: &SourceMap) -> TransformResult<syn::Type> {
-    parse_quote!({ crate::Any } as syn::Type)
+pub fn lit_type_to_type(ty: &TsLitType, _cm: &SourceMap) -> TransformResult<syn::Type> {
+    let ty = match &ty.lit {
+        TsLit::Number(_) => parse_quote!({ crate::Number } as syn::Type),
+        TsLit::Str(_) => parse_quote!({ crate::String } as syn::Type),
+        TsLit::Bool(_) => parse_quote!({ crate::Boolean } as syn::Type),
+        TsLit::BigInt(_) => parse_quote!({ crate::Number } as syn::Type),
+        TsLit::Tpl(_) => parse_quote!({ crate::String } as syn::Type),
+    }?;
+
+    Ok(ty)
 }
 
 pub fn type_predicate_to_type(

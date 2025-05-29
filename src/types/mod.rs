@@ -186,7 +186,7 @@ impl Function {
     }
 
     //workaround for variadic function
-    pub fn arg(self, arg: Any) -> Self {
+    pub fn arg<T:Into<Any>>(self, arg: T) -> Self {
         //this binding is insane. this doesnt even work
         //but nothing broke yet sooooooooo idc
         let context = if self.is_bound() {
@@ -197,7 +197,7 @@ impl Function {
 
         let this: js_sys::Function = self.value.into();
         Self {
-            value: this.bind1(&context, &arg.value).into(),
+            value: this.bind1(&context, &arg.into().value).into(),
             context,
         }
     }
@@ -248,6 +248,7 @@ from_primitive! {
     usize as Number
     &str as String
     std::string::String as String
+    js_sys::Function as Function
 }
 
 impl From<()> for Undefined {
