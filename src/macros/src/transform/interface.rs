@@ -81,6 +81,13 @@ pub fn interface_to_token_stream(
         pub struct #ident{
             internal: crate::Object
         }
+        impl TryFrom<wasm_bindgen::JsValue> for #ident {
+            type Error = wasm_bindgen::JsValue;
+
+            fn try_from(value: wasm_bindgen::JsValue) -> Result<#ident, Self::Error> {
+                Ok(#ident { internal: Object::from(value) })
+            }
+        }
         impl #ident {
             #(#methods)*
         }
