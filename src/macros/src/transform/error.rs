@@ -65,6 +65,13 @@ impl Error {
         }
     }
 
+    pub fn raw(message: String, ty:ErrorType) -> Self {
+        Self {
+            message,
+            ty,
+        }
+    }
+
     pub fn ts_syntax(err: swc_ecma_parser::error::Error, cm: &SourceMap) -> Self {
         Self {
             message: Self::create_message(format!("TS Syntax Error:"), err.span(), cm),
