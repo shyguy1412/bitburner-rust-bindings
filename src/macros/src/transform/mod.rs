@@ -51,3 +51,28 @@ macro_rules! parse_quote {
     };
 }
 pub(crate) use parse_quote;
+
+pub fn rename_impl_item_function(ident:&str, func: syn::ImplItemFn) -> syn::ImplItemFn {
+    syn::ImplItemFn {
+        attrs: func.attrs,
+        vis: func.vis,
+        defaultness: func.defaultness,
+        sig: syn::Signature {
+            constness: func.sig.constness,
+            asyncness: func.sig.asyncness,
+            unsafety: func.sig.unsafety,
+            abi: func.sig.abi,
+            fn_token: func.sig.fn_token,
+            ident: syn::Ident::new(
+                ident,
+                func.sig.ident.span(),
+            ),
+            generics: func.sig.generics,
+            paren_token: func.sig.paren_token,
+            inputs: func.sig.inputs,
+            variadic: func.sig.variadic,
+            output: func.sig.output,
+        },
+        block: func.block,
+    }
+}
