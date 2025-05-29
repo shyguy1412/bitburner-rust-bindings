@@ -64,12 +64,6 @@ impl From<JsValue> for Any {
     }
 }
 
-impl From<()> for Any {
-    fn from(_: ()) -> Self {
-        Any::new(JsValue::undefined(), JsValue::undefined())
-    }
-}
-
 impl From<std::convert::Infallible> for crate::Any {
     fn from(_: std::convert::Infallible) -> Self {
         ().into()
@@ -88,7 +82,7 @@ impl std::ops::Deref for Any {
  * This macro implements casting from Any into any other type
  * Actual validation of types is handled by the corresponding wrapper struct
  */
-macro_rules! try_into {
+macro_rules! try_from {
   ($(($t:ident, $ts:literal) => $m:literal)*) => ($(
     impl TryFrom<Any> for $t {
         type Error = JsValue;
@@ -114,7 +108,7 @@ macro_rules! try_into {
 //fuck english so fucking much
 //since error messages cant be unique I need to pass to the macro ._.
 //(I also pass the corresponding typeof result cause I cant be fucked to make this a procedural macro )
-try_into! {
+try_from! {
   (Function, "function") => "Cannot cast {} into a function"
   (Object, "object") => "Cannot cast {} into an object"
   (Undefined, "undefined") => "{} is not undefined"
@@ -193,11 +187,5 @@ impl Future for Any {
             }
             None => panic!("wtf?"),
         }
-    }
-}
-
-impl From<&str> for Any {
-    fn from(value: &str) -> Self {
-        value.into()
     }
 }

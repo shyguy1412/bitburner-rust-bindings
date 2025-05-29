@@ -224,38 +224,46 @@ impl Function {
     }
 }
 
-impl From<f64> for Number {
-    fn from(v: f64) -> Self {
-        Number {
-            value: JsValue::from(v),
-            context: JsValue::undefined(),
+macro_rules! from_primitive {
+    ($($from:ty as $to:ty)*) => ($(
+        impl From<$from> for $to {
+            fn from(v: $from) -> Self {
+                <$to>::new(JsValue::from(v), JsValue::undefined())
+            }
         }
-    }
-}
 
-impl From<&str> for String {
-    fn from(str: &str) -> Self {
-        String {
-            value: JsValue::from(str),
-            context: JsValue::undefined(),
+        impl From<$from> for Any {
+            fn from(v: $from) -> Self {
+                Any::new(JsValue::from(v), JsValue::undefined())
+            }
         }
-    }
-}
+    )*)
 
-impl From<std::string::String> for String {
-    fn from(v: std::string::String) -> Self {
-        String {
-            value: JsValue::from(v),
-            context: JsValue::undefined(),
-        }
-    }
+}
+from_primitive! {
+    f32 as Number
+    f64 as Number
+    i64 as Number
+    i32 as Number
+    i16 as Number
+    i8 as Number
+    u64 as Number
+    u32 as Number
+    u16 as Number
+    u8 as Number
+    usize as Number
+    &str as String
+    std::string::String as String
 }
 
 impl From<()> for Undefined {
     fn from(_: ()) -> Self {
-        Undefined {
-            value: JsValue::undefined(),
-            context: JsValue::undefined(),
-        }
+        Undefined::new(JsValue::undefined(), JsValue::undefined())
+    }
+}
+
+impl From<()> for Any {
+    fn from(_: ()) -> Self {
+        Any::new(JsValue::undefined(), JsValue::undefined())
     }
 }
